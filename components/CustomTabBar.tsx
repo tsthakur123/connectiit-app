@@ -1,8 +1,14 @@
-import React, { useEffect, useState } from 'react';
-import { View, TouchableOpacity, StyleSheet, Text } from 'react-native';
-import { useRouter, usePathname } from 'expo-router';
-import FontAwesome from '@expo/vector-icons/FontAwesome';
-import { BottomTabBarProps } from '@react-navigation/bottom-tabs';
+import React, { useEffect, useState } from "react";
+import {
+  View,
+  TouchableOpacity,
+  StyleSheet,
+  Text,
+  Dimensions,
+} from "react-native";
+import { useRouter, usePathname } from "expo-router";
+import FontAwesome from "@expo/vector-icons/FontAwesome";
+import { BottomTabBarProps } from "@react-navigation/bottom-tabs";
 
 interface TabItem {
   name: string;
@@ -11,134 +17,114 @@ interface TabItem {
 }
 
 const tabs: TabItem[] = [
-  { name: 'Home', icon: 'home', path: '/(tabs)/home' },
-  { name: 'Communities', icon: 'group', path: '/(tabs)/communities' },
-  { name: 'Search', icon: 'search', path: '/(tabs)/search' },
-  { name: 'Travel', icon: 'plane', path: '/(tabs)/travel' },
-  { name: 'Random Chat', icon: 'comments', path: '/(tabs)/random-chat' },
+  { name: "Home", icon: "home", path: "/(tabs)/home" },
+  { name: "Communities", icon: "group", path: "/(tabs)/communities" },
+  { name: "Search", icon: "search", path: "/(tabs)/search" },
+  { name: "Travel", icon: "plane", path: "/(tabs)/travel" },
+  { name: "Random Chat", icon: "comments", path: "/(tabs)/random-chat" },
 ];
 
 interface CustomTabBarProps extends Partial<BottomTabBarProps> {
   showProfile?: boolean;
 }
 
-const CustomTabBar: React.FC<CustomTabBarProps> = ({ showProfile = false, ...props }) => {
+const CustomTabBar: React.FC<CustomTabBarProps> = ({ showProfile = false }) => {
   const router = useRouter();
   const pathname = usePathname();
+  const [activeTab, setActiveTab] = useState<string>("");
 
-  const [activeTab, setActiveTab] = useState<string>('');
-
-  // Update active tab when pathname changes
+  
   useEffect(() => {
     if (!pathname) return;
-    // console.log("path", pathname);
     
-    
-    // First check if we're on a tab route
     for (const tab of tabs) {
       if (pathname === tab.path || tab.path.endsWith(pathname)) {
         setActiveTab(tab.path);
         return;
       }
     }
-    
-    // Then check if we're on the profile page
-    if (pathname === '/profile') {
-      // console.log("setting /profile");
-      
-      setActiveTab('/profile');
-      return;
+    if (pathname === "/profile") {
+      setActiveTab("/profile");
     }
-    
-    // For any other route, don't change the active tab
-  }, []);
+  }, [pathname]);
 
-  // Handle tab press
   const handleTabPress = (path: string) => {
     setActiveTab(path);
-    
     router.push(path as any);
   };
 
+  const allTabs = showProfile
+    ? [...tabs, { name: "Profile", icon: "user", path: "/profile" }]
+    : tabs;
+
   return (
-    <View style={styles.tabBar}>
-      {tabs.map((tab) => (
-        <TouchableOpacity
-          key={tab.name}
-          style={[
-            styles.tabItem,
-            activeTab === tab.path && styles.activeTabItem
-          ]}
-          onPress={() => handleTabPress(tab.path)}
-        >
-          <FontAwesome
-            size={24}
-            name={tab.icon as any}
-            color={activeTab === tab.path ? '#007AFF' : '#8E8E93'}
-          />
-          <Text style={[
-            styles.tabLabel,
-            activeTab === tab.path && styles.activeTabLabel
-          ]}>
-            {tab.name}
-          </Text>
-        </TouchableOpacity>
-      ))}
-      
-      {showProfile && (
-        <TouchableOpacity
-          style={[
-            styles.tabItem,
-            activeTab === '/profile' && styles.activeTabItem
-          ]}
-          onPress={() => handleTabPress('/profile')}
-        >
-          <FontAwesome
-            size={24}
-            name="user"
-            color={activeTab === '/profile' ? '#007AFF' : '#8E8E93'}
-          />
-          <Text style={[
-            styles.tabLabel,
-            activeTab === '/profile' && styles.activeTabLabel
-          ]}>
-            Profile
-          </Text>
-        </TouchableOpacity>
-      )}
+    <View style={styles.wrapper}>
+      <View style={styles.tabBar}>
+        {allTabs.map((tab) => (
+          <TouchableOpacity
+            key={tab.name}
+            style={styles.tabItem}
+            onPress={() => handleTabPress(tab.path)}
+          >
+            <View style={styles.iconTextContainer}>
+              <FontAwesome
+                size={22}
+                name={tab.icon as any}
+                color={activeTab === tab.path ? "#FE744D" : "#aaa"}
+              />
+              {activeTab === tab.path && (
+                <Text style={styles.activeTabLabel}>{tab.name}</Text>
+              )}
+            </View>
+          </TouchableOpacity>
+        ))}
+      </View>
     </View>
   );
 };
 
+const { width } = Dimensions.get("window");
+
 const styles = StyleSheet.create({
+  wrapper: {
+    position: "absolute",
+    bottom: 20,
+    left: 20,
+    right: 20,
+    alignItems: "center",
+    justifyContent: "center",
+    zIndex: 10,
+  },
   tabBar: {
-    flexDirection: 'row',
-    height: 60,
-    backgroundColor: 'white',
-    borderTopWidth: 1,
-    borderTopColor: '#e0e0e0',
-    justifyContent: 'space-around',
-    alignItems: 'center',
+    flexDirection: "row",
+    backgroundColor: "#262438",
+    opacity: 0.92,
+    borderRadius: 40,
+    paddingVertical: 15,
+    paddingHorizontal: 25,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 10,
   },
   tabItem: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingVertical: 10,
+    marginHorizontal: 3,
+    alignItems: "center",
+    justifyContent: "center",
   },
-  activeTabItem: {
-    borderTopWidth: 2,
-    borderTopColor: '#007AFF',
-  },
-  tabLabel: {
-    fontSize: 10,
-    marginTop: 4,
-    color: '#8E8E93',
+  iconTextContainer: {
+    alignItems: "center",
+    width: 50, // Fixed width to prevent fluctuation
+    justifyContent: "center",
+    // backgroundColor:"white"
   },
   activeTabLabel: {
-    color: '#007AFF',
-    fontWeight: 'bold',
+    fontSize: 10,
+    marginTop: 4,
+    color: "#FE744D",
+    fontWeight: "600",
   },
 });
 
-export default CustomTabBar; 
+export default CustomTabBar;

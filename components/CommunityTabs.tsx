@@ -32,7 +32,7 @@ const CommunityTabs: React.FC<Props> = ({ onChange }) => {
   };
 
   return (
-    <View className="border-b border-[#262438] bg-[#1B1730]">
+    <View className="border-b border-[#262438] bg-primary">
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}

@@ -1,76 +1,168 @@
-// components/DMContent.tsx
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import React, { useCallback } from "react";
+import {
+  View,
+  Text,
+  ScrollView,
+  TouchableOpacity,
+  StatusBar,
+  Image,
+} from "react-native";
+import { useFocusEffect, useRouter } from "expo-router";
+import OnlineUsers from "@/components/OnlineUsers";
+
+const onlineUsers = [
+  {
+    id: "1",
+    name: "Alice",
+    avatar: "https://randomuser.me/api/portraits/women/1.jpg",
+  },
+  {
+    id: "2",
+    name: "Bob",
+    avatar: "https://randomuser.me/api/portraits/men/2.jpg",
+  },
+  {
+    id: "3",
+    name: "Cathy",
+    avatar: "https://randomuser.me/api/portraits/women/2.jpg",
+  },
+  {
+    id: "4",
+    name: "Dan",
+    avatar: "https://randomuser.me/api/portraits/men/3.jpg",
+  },
+  {
+    id: "5",
+    name: "Eva",
+    avatar: "https://randomuser.me/api/portraits/women/4.jpg",
+  },
+  {
+    id: "6",
+    name: "Frank",
+    avatar: "https://randomuser.me/api/portraits/men/5.jpg",
+  },
+  {
+    id: "7",
+    name: "Grace",
+    avatar: "https://randomuser.me/api/portraits/women/6.jpg",
+  },
+  {
+    id: "8",
+    name: "Henry",
+    avatar: "https://randomuser.me/api/portraits/men/7.jpg",
+  },
+  {
+    id: "9",
+    name: "Isla",
+    avatar: "https://randomuser.me/api/portraits/women/8.jpg",
+  },
+  {
+    id: "10",
+    name: "Jake",
+    avatar: "https://randomuser.me/api/portraits/men/9.jpg",
+  },
+];
 
 const DMScreen = () => {
+  const router = useRouter();
+
+  useFocusEffect(
+    useCallback(() => {
+      // Set status bar for DM screen
+      StatusBar.setBarStyle("light-content");
+      StatusBar.setBackgroundColor("#FE744D");
+
+      return () => {
+        // Reset to default when leaving (optional)
+        StatusBar.setBarStyle("light-content");
+        StatusBar.setBackgroundColor("#1B1730");
+      };
+    }, [])
+  );
+
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Direct Messages</Text>
+    // <View className="flex-1 bg-primary">
+    // {/* Header */}
+    <View className="flex-1 bg-orange border-b border-gray-200 dark:border-gray-700">
+      <Text className="p-2 pt-4 text-3xl font-bold text-black dark:text-white2">
+        Hi, Tarun!
+      </Text>
+      {/* <Text className="p-2 text-lg font-bold text-black dark:text-white">
+        Direct Messages
+      </Text> */}
+      <Text className="px-4 text-xl font-bold text-black dark:text-white mt-20">
+        active now
+      </Text>
+      <OnlineUsers
+        users={onlineUsers}
+        onPressUser={(id) => console.log("Tapped user:", id)}
+      />
+      <View className="flex-1 bg-primary rounded-t-[2.5rem] pt-32">
+        {/* // Chat List */}
+        <ScrollView className="flex-1">
+          {onlineUsers.map((user, i) => {
+            return (
+              <TouchableOpacity
+                key={i}
+                className="flex-row items-center px-4 py-3 border-b border-gray-100 dark:border-gray-800"
+                onPress={() => router.push(`/`)}
+              >
+                <View className="w-12 h-12 rounded-full overflow-hidden mr-4">
+                  <Image
+                    source={{ uri: `https://api.dicebear.com/7.x/avataaars/png?seed=User${i + 1}`}}
+                    className="w-full h-full"
+                    resizeMode="cover"
+                  />
+                </View>
+                <View className="flex-1">
+                  <Text className="font-semibold text-black dark:text-white">
+                    {user.name}
+                  </Text>
+                  <Text className="text-sm text-gray-500 dark:text-gray-400">
+                    This is a message preview...
+                  </Text>
+                </View>
+                <Text className="text-xs text-gray-400 dark:text-gray-500 ml-2">
+                  5m
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </ScrollView>
       </View>
-      <ScrollView style={styles.scrollView}>
-        {Array(12).fill(0).map((_, i) => (
-          <View key={i} style={styles.conversation}>
-            <View style={styles.avatar} />
-            <View style={styles.messagePreview}>
-              <Text style={styles.username}>User {i + 1}</Text>
-              <Text style={styles.message}>This is a message preview...</Text>
-            </View>
-            <Text style={styles.time}>5m</Text>
-          </View>
-        ))}
-      </ScrollView>
     </View>
+
+    //   {/* Chat List
+    //   <ScrollView className="flex-1">
+    //     {Array(22)
+    //       .fill(0)
+    //       .map((_, i) => {
+    //         const username = `User${i + 1}`;
+
+    //         return (
+    //           <TouchableOpacity
+    //             key={i}
+    //             className="flex-row items-center px-4 py-3 border-b border-gray-100 dark:border-gray-800"
+    //             onPress={() => router.push(`/`)}
+    //           >
+    //             <View className="w-12 h-12 rounded-full bg-gray-300 dark:bg-gray-600 mr-4" />
+    //             <View className="flex-1">
+    //               <Text className="font-semibold text-black dark:text-white">
+    //                 {username}
+    //               </Text>
+    //               <Text className="text-sm text-gray-500 dark:text-gray-400">
+    //                 This is a message preview...
+    //               </Text>
+    //             </View>
+    //             <Text className="text-xs text-gray-400 dark:text-gray-500 ml-2">
+    //               5m
+    //             </Text>
+    //           </TouchableOpacity>
+    //         );
+    //       })}
+    //   </ScrollView> */}
+    // {/* </View> */}
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: 'white',
-  },
-  header: {
-    height: 50,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  scrollView: {
-    flex: 1,
-  },
-  conversation: {
-    flexDirection: 'row',
-    padding: 15,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
-    alignItems: 'center',
-  },
-  avatar: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    backgroundColor: '#e0e0e0',
-    marginRight: 15,
-  },
-  messagePreview: {
-    flex: 1,
-  },
-  username: {
-    fontWeight: '600',
-    marginBottom: 5,
-  },
-  message: {
-    color: '#666',
-  },
-  time: {
-    color: '#aaa',
-    fontSize: 12,
-  },
-});
 
 export default DMScreen;

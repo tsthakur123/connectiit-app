@@ -10,11 +10,9 @@ export const Topbar = () => {
 
       {/* Right - Icons */}
       <View className="flex-row space-x-4">
-        <Link href='/profile'>
         <TouchableOpacity onPress={() => router.push("/profile")}>
           <FontAwesome size={24} color="white" name="user"/>
         </TouchableOpacity>
-        </Link>
       </View>
     </View>
   );
