@@ -1,4 +1,5 @@
 import CustomTabBar from '@/components/CustomTabBar'
+import DMChatScreen from '@/screens/DMChatScreen'
 import DMScreen from '@/screens/DMScreen'
 import { ProfileScreen } from '@/screens/ProfileScreen'
 import React from 'react'
@@ -8,7 +9,8 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 const index = () => {
   return (
     <SafeAreaView className='flex-1'>
-      <DMScreen/>
+      <ProfileScreen/>
+      {/* <DMChatScreen/> */}
       <CustomTabBar/>
     </SafeAreaView>
   )

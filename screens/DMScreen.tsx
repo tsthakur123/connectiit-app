@@ -105,7 +105,7 @@ const DMScreen = () => {
               <TouchableOpacity
                 key={i}
                 className="flex-row items-center px-4 py-3 border-b border-gray-100 dark:border-gray-800"
-                onPress={() => router.push(`/`)}
+                onPress={() => router.push({ pathname: "/chat/[id]", params: { id: user.name } })}
               >
                 <View className="w-12 h-12 rounded-full overflow-hidden mr-4">
                   <Image

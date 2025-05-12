@@ -38,7 +38,10 @@ const Search = () => {
         className="mt-2"
         renderItem={({ item }) => (
           <TouchableOpacity
-            onPress={() => router.push(`/profile/${item.username}`)} // ✅ Navigate
+            onPress={() => router.push({
+              pathname: "/profile/[username]",
+              params: { username: item.username }
+            })} // ✅ Navigate
             className="flex-row items-center bg-[#262438] rounded-2xl p-4 mb-3"
           >
             <Image
