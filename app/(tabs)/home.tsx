@@ -12,7 +12,7 @@ const home = () => {
       tabBarStyle: { display: 'none' }
     }}>
     <Tab.Screen name="Home" component={FeedScreen} />
-    <Tab.Screen name="Profile" component={DMScreen} />
+    <Tab.Screen name="DM" component={DMScreen} />
   </Tab.Navigator>
   )
 }

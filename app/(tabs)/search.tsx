@@ -19,7 +19,7 @@ const Search = () => {
   );
 
   return (
-    <SafeAreaView className="flex-1 bg-[#1B1730] px-4">
+    <SafeAreaView className="flex-1 bg-primary px-4">
       {/* Search Bar */}
       <View className="py-2">
         <TextInput
@@ -27,7 +27,7 @@ const Search = () => {
           onChangeText={setQuery}
           placeholder="Search users..."
           placeholderTextColor="#aaa"
-          className="bg-[#262438] text-white px-4 py-2 rounded-xl"
+          className="bg-secondary text-white px-4 py-2 rounded-xl"
         />
       </View>
 
@@ -42,7 +42,7 @@ const Search = () => {
               pathname: "/profile/[username]",
               params: { username: item.username }
             })} // ✅ Navigate
-            className="flex-row items-center bg-[#262438] rounded-2xl p-4 mb-3"
+            className="flex-row items-center bg-secondary rounded-2xl p-4 mb-3"
           >
             <Image
               source={{ uri: item.avatar }}

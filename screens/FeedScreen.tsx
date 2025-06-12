@@ -12,6 +12,7 @@ import {
 } from "react-native";
 import BottomSheet from "@gorhom/bottom-sheet";
 import { router } from "expo-router";
+import { Heart, MessageCircle, Send } from "lucide-react-native";
 
 // Separate component for the comment button
 const CommentButton = ({
@@ -69,7 +70,9 @@ const FeedScreen = () => {
     <View style={styles.post}>
       <View style={styles.postHeader}>
         <View style={styles.avatar} />
-        <Text style={styles.username} className="text-[#fafafa]">User {index + 1}</Text>
+        <Text style={styles.username} className="text-white2">
+          User {index + 1}
+        </Text>
       </View>
       <Image
         source={{
@@ -78,10 +81,22 @@ const FeedScreen = () => {
         style={styles.postImage}
         className="rounded-[2.5rem] mx-2"
       />
-      <View style={styles.postActions}>
-        <Text style={styles.actionText}>Like • </Text>
-        <CommentButton index={index} onPress={handleCommentPress} />
-        <Text style={styles.actionText}> • Share</Text>
+      <View style={styles.postActions} className="gap-1">
+        <TouchableOpacity className="flex-row items-center justify-center border border-orange rounded-full w-10 h-10">
+          <Heart size={20} color="#fafafa" />
+        </TouchableOpacity>
+        <TouchableOpacity
+          onPress={() => handleCommentPress(index)}
+          className="flex-row items-center justify-center border border-orange rounded-full w-10 h-10"
+        >
+          <MessageCircle size={20} color="#fafafa" />
+        </TouchableOpacity>
+        <TouchableOpacity
+          onPress={() => console.log("Share pressed")}
+          className="flex-row items-center justify-center border border-orange rounded-full w-10 h-10"
+        >
+          <Send size={20} color="#fafafa" />
+        </TouchableOpacity>
       </View>
     </View>
   );
