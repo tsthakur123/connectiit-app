@@ -1,12 +1,19 @@
 import { View, Text, Pressable, Image } from "react-native";
 import { router } from "expo-router";
 import { AntDesign } from "@expo/vector-icons";
-import '@/global.css';
+import "@/global.css";
 
 export default function Login() {
   const handleLogin = () => {
     // Replace this with actual Google Auth logic
     router.push("/(tabs)/home");
+
+    // Right after login/signup response from backend:
+
+    // const { setUser, setToken } = useAuthStore.getState();
+
+    // setUser(response.user);
+    // setToken(response.token);
   };
 
   return (
@@ -19,7 +26,9 @@ export default function Login() {
       /> */}
 
       {/* Welcome Text */}
-      <Text className="text-white text-3xl font-bold mb-2">Welcome to ConnectIIT</Text>
+      <Text className="text-white text-3xl font-bold mb-2">
+        Welcome to ConnectIIT
+      </Text>
       <Text className="text-gray-300 text-base text-center mb-8">
         Connect, collaborate, and grow with IITians across the nation.
       </Text>
@@ -30,7 +39,9 @@ export default function Login() {
         className="flex-row items-center bg-[#FE744D] px-5 py-3 rounded-2xl"
       >
         <AntDesign name="google" size={20} color="white" />
-        <Text className="text-white text-base font-semibold ml-3">Continue with Google</Text>
+        <Text className="text-white text-base font-semibold ml-3">
+          Continue with Google
+        </Text>
       </Pressable>
 
       {/* Footer */}
