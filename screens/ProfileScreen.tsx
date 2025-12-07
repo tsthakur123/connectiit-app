@@ -1,74 +1,105 @@
-import React from "react";
-import { View, Text, Image, TouchableOpacity, ScrollView } from "react-native";
-import { FontAwesome } from "@expo/vector-icons";
-import { ExpandableSection } from "@/components/ExpandableSection";
+import React, { useEffect, useState } from "react";
+import { router } from "expo-router";
+import {jwtDecode} from "jwt-decode";
+import { View, Text, Image, TouchableOpacity, ScrollView, Button } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Pencil } from "lucide-react-native";
 
+import { ExpandableSection } from "@/components/ExpandableSection";
+
 export const ProfileScreen = () => {
+  const [user, setUser] = useState<any>(null);
+
+  useEffect(() => {
+    const loadUser = async () => {
+      try {
+        const token = await AsyncStorage.getItem("token");
+        const userinfo=await jwtDecode(token||"");
+        console.log(userinfo)
+        setUser(userinfo)
+      } catch (error) {
+        console.error("Error decoding token:", error);
+      }
+    };
+    loadUser();
+  }, []);
+
   return (
     <ScrollView className="flex-1 bg-primary">
-      {/* Header */}
-      <View className="flex-1 h-72">
-        <View className="flex-1 h-72 rounded-b-[3rem] overflow-hidden relative">
-          <Image
-            source={{
-              uri: "https://images.unsplash.com/photo-1513909894411-7d7e04c28ecd?q=80&w=1974&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-            }}
-            className="w-full h-full opacity-95"
-            resizeMode="cover" // Ensures it fills and crops if necessary
-          />
-          {/* Profile Info */}
-          <View className="absolute top-1/2 -translate-y-1/2 left-1/2 -translate-x-1/2">
-            <View className="bg-white w-32 h-32 rounded-full flex-1 justify-center items-center shadow-md shadow-black">
-              <View className="w-[7.5rem] h-[7.5rem] rounded-full overflow-hidden">
-                <Image
-                  source={{
-                    uri: "https://images.unsplash.com/photo-1566753323558-f4e0952af115?q=80&w=1921&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-                  }}
-                  className="w-full h-full"
-                  resizeMode="cover" // Ensures it fills and crops if necessary
-                />
-              </View>
-            </View>
-            <View className="flex-1 justify-center">
-              <Text className="text-2xl font-bold text-center text-[#fafafa] shadow-xl shadow-black">
-                Tarun Singh
-              </Text>
-              <Text className="font-semibold text-center text-[#fafafa] shadow-xl shadow-black">
-                IIT (BHU) Varanasi
-              </Text>
-            </View>
+      {/* Header Section */}
+      <View className="h-32 w-full bg-[#1A1A1A] rounded-b-[3rem] overflow-hidden relative">
+        {/* Background Image */}
+        <Image
+          source={{
+            uri: "https://images.unsplash.com/photo-1513909894411-7d7e04c28ecd?q=80",
+          }}
+          className="w-full h-full opacity-50"
+          resizeMode="cover"
+        />
+
+        {/* Profile Picture */}
+        <View className="absolute left-1/2 -translate-x-1/2 items-center">
+          <View className="w-28 h-28 rounded-full bg-white shadow-lg justify-center items-center overflow-hidden">
+            <Image
+              source={{
+                uri: `${user?.image}`,
+              }}
+              className="w-full h-full"
+              resizeMode="cover"
+            />
           </View>
+
+          {/* Edit Icon */}
+          <TouchableOpacity className="absolute bottom-2 right-2 bg-[#FE744D] p-2 rounded-full">
+            <Pencil size={16} color="white" />
+          </TouchableOpacity>
         </View>
-        <View
-  className="absolute h-14 pl-10 rounded-full bg-white2 bottom-0 translate-y-1/2 left-1/2 -translate-x-1/2 flex-row items-center justify-between px-4"
-  style={{ width: 330 }}
->
-  {/* Left: Followers & Following */}
-  <View className="flex-row gap-16">
-    <View className="items-center">
-      <Text className="text text-secondary font-bold">Followers</Text>
-      <Text className="text-lg font-bold text-primary">120</Text>
-    </View>
-    <View className="items-center">
-      <Text className="text-secondary font-bold">Following</Text>
-      <Text className="text-lg font-bold text-primary">180</Text>
-    </View>
-  </View>
-
-  {/* Right: Edit Icon */}
-  <TouchableOpacity className="p-2 rounded-full bg-[#FE744D]">
-    <Pencil size={16} color="white" />
-  </TouchableOpacity>
-</View>
       </View>
-      <ExpandableSection/>
 
-           {/* Posts Grid - Bento Style */}
+      {/* Name + College */}
+      <View className="mt-6 items-center">
+        <Text className="text-3xl font-bold text-white">{user?.name || "User"}</Text>
+        <Text className="text-lg text-gray-300 font-semibold">
+          IIT (BHU) Varanasi
+        </Text>
+          <TouchableOpacity
+            className="mt-2 px-4 py-1 border-2 border-gray-500 rounded-full"
+            onPress={async () => {
+              try {
+                await AsyncStorage.removeItem("token"); 
+                console.log("JWT removed, logged out");
+                router.push("/");
+              } catch (e) {
+                console.error("Error clearing token:", e);
+              }
+            }}
+          >
+            <Text className="text-lg text-gray-300 font-semibold">Logout</Text>
+          </TouchableOpacity>
+      </View>
+
+      {/* Followers / Following */}
+      <View className="mt-6 mx-auto bg-white2 w-[90%] h-16 rounded-full flex-row items-center justify-around shadow-md">
+        <View className="items-center">
+          <Text className="text-secondary font-bold">Followers</Text>
+          <Text className="text-xl font-bold text-primary">120</Text>
+        </View>
+
+        <View className="items-center">
+          <Text className="text-secondary font-bold">Following</Text>
+          <Text className="text-xl font-bold text-primary">180</Text>
+        </View>
+      </View>
+
+      {/* Expandable Section */}
+      <View className="mt-4 px-4">
+        <ExpandableSection />
+      </View>
+
+      {/* Posts Grid */}
       <View className="flex flex-wrap flex-row px-2 gap-2 mt-10">
         {[...Array(12)].map((_, index) => {
-          const isLarge =
-            index === 0 || index === 4 || index === 8; // Every 4th is large
+          const isLarge = index % 4 === 0;
 
           return (
             <Image
@@ -82,7 +113,6 @@ export const ProfileScreen = () => {
           );
         })}
       </View>
-
     </ScrollView>
   );
 };

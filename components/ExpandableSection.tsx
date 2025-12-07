@@ -59,7 +59,7 @@ export const ExpandableSection = () => {
   };
 
   return (
-    <View className="flex-1 relative mt-12">
+    <View className="flex-1 relative mt-4">
       {/* Expand Button */}
       <View className="absolute left-1/2 bottom-0 -translate-x-1/2 translate-y-1/2 z-50">
         <Pressable

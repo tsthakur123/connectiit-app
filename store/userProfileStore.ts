@@ -57,14 +57,7 @@ export const useUserProfileStore = create<UserProfileStore>()(
 
 // On Login Success
 
-// const { setProfile } = useUserProfileStore.getState();
 
-// setProfile({
-//   id: user.id,
-//   name: user.name,
-//   email: user.email,
-//   avatarUrl: user.avatar,
-// });
 
 
 // On Logout
