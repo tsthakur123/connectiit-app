@@ -1,4 +1,4 @@
-import React from 'react'
+import React from "react";
 import { createMaterialTopTabNavigator } from '@react-navigation/material-top-tabs';
 import FeedScreen from '@/screens/FeedScreen';
 import DMScreen from '@/screens/DMScreen';
@@ -6,6 +6,7 @@ import DMScreen from '@/screens/DMScreen';
 const Tab = createMaterialTopTabNavigator();
 
 const home = () => {
+
   return (
     <Tab.Navigator
     screenOptions={{

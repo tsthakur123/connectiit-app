@@ -12,7 +12,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // expogo "52500388902-b8ukr2pf2lhfntajotoqpb0d1q98gnia.apps.googleusercontent.com"
 WebBrowser.maybeCompleteAuthSession();
-const AUTH_URI=process.env.EXPO_AUTH_BACKEND_URI || "http://localhost:3008";
+const AUTH_URI=process.env.EXPO_AUTH_BACKEND_URI || "http://localhost:3008/api/auth";
 export default function Login() {
   const GOOGLE_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID || "";
   if (!GOOGLE_CLIENT_ID) {
