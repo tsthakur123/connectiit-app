@@ -14,24 +14,16 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated";
 
-if (
-  Platform.OS === "android" &&
-  UIManager.setLayoutAnimationEnabledExperimental
-) {
+// Enable LayoutAnimation on Android
+if (Platform.OS === "android" && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
 }
 
-const dummySkills = [
-  "Full Stack Development",
-  "Startup",
-  "AI",
-  "Design",
-  "Travel",
-  "Music",
-  "Tech"
-];
+interface ExpandableSectionProps {
+  interests: string[];
+}
 
-export const ExpandableSection = () => {
+export const ExpandableSection: React.FC<ExpandableSectionProps> = ({ interests }) => {
   const [isExpanded, setIsExpanded] = useState(false);
 
   // Animated shared values
@@ -72,7 +64,7 @@ export const ExpandableSection = () => {
         </Pressable>
       </View>
 
-      {/* Radar Section (empty) */}
+      {/* Spacer / Radar Section */}
       <View className="flex-1 h-12"></View>
 
       {/* Expandable Section with animated height */}
@@ -87,14 +79,20 @@ export const ExpandableSection = () => {
         </View>
 
         <View className="flex-row flex-wrap justify-center gap-3">
-          {dummySkills.map((skill) => (
-            <Text
-              key={skill}
-              className="bg-secondary border border-[#FE744D] text-[#FE744D] px-3 py-1 rounded-full text-sm"
-            >
-              {skill}
+          {interests && interests.length > 0 ? (
+            interests.map((interest) => (
+              <Text
+                key={interest}
+                className="bg-secondary border border-[#FE744D] text-[#FE744D] px-3 py-1 rounded-full text-sm"
+              >
+                {interest}
+              </Text>
+            ))
+          ) : (
+            <Text className="text-white2 text-sm text-center">
+              No interests added
             </Text>
-          ))}
+          )}
         </View>
       </Animated.View>
     </View>
