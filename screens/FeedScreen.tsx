@@ -1,6 +1,7 @@
 import { Topbar } from "@/components/Topbar";
+import axios from 'axios';
 import CommentsSheet from "@/components/Scrollable-Bottomsheet";
-import React, { useRef, useMemo, useCallback, useState } from "react";
+import React, { useRef, useMemo, useCallback, useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -13,8 +14,10 @@ import {
 import BottomSheet from "@gorhom/bottom-sheet";
 import { router } from "expo-router";
 import { Heart, MessageCircle, Send } from "lucide-react-native";
+import { getuserInfo } from "@/services/user_info.service";
 
-// Separate component for the comment button
+var userInfo;
+
 const CommentButton = ({
   index,
   onPress,
@@ -34,56 +37,150 @@ const CommentButton = ({
     </Pressable>
   );
 };
+const handleLikePress = async (post_ID) => {
+  try {
+   const isLiked= await axios.post(
+      `http://localhost:3009/api/post/posts/${post_ID}/like?userId=${userInfo?.user_id}`
+    );
+    return isLiked.data;
+  } catch (error) {
+    console.error("Error liking post:", error);
+  }
+};
 
 const FeedScreen = () => {
   const sheetRef = useRef<BottomSheet>(null);
+  const userInfoFN= async() => {
+  const res=await getuserInfo();
+  console.log("User Info in Feed Screen:", res);
+    userInfo=res;
+  }
   const snapPoints = useMemo(() => ["40%", "90%"], []);
+  const [postsdata, setpostsdata] = useState([])
   const [activePostIndex, setActivePostIndex] = useState<number | null>(null);
+  const [activePostID, setActivePostID] = useState<string | null>(null);
+  const [likedPosts, setLikedPosts] = useState<{ [key: string]: boolean }>({});
+  const [commentsData, setCommentsData] = useState<any[]>([]);
 
-  const mockComments = useMemo(
-    () =>
-      Array(30)
-        .fill(0)
-        .map((_, index) => `Comment ${index + 1}`),
-    []
-  );
+  useEffect( () => {
+    userInfoFN();
+    const fetchPosts = async () => {
+      try {
+        const response = await axios.get("http://localhost:3009/api/post/");
+        const data = response.data;
+        setpostsdata(data);
+        console.log("Fetched posts:", data);
+      } catch (error) {
+        console.error("Error fetching posts:", error);
+      }
+    };
+    fetchPosts();
+  }, []);
 
+  const posts = useMemo(() => postsdata, [postsdata]);
   const handleCommentPress = useCallback((index: number) => {
     console.log("Comment button pressed for post:", index);
     setActivePostIndex(index);
-    setTimeout(() => {
-      if (sheetRef.current) {
-        sheetRef.current.snapToIndex(1);
+    setActivePostID(posts[index]?.id);
+    const fetchComments = async () => {
+      try {
+        const postID = posts[index]?.id;
+        if (!postID) {
+          console.error("Post ID not found");
+          return;
+        }
+        
+        const response = await axios.get(
+          `http://localhost:3009/api/post/comments/${postID}`
+        );
+        console.log("Fetched comments:", response.data);
+        if(response.data.message === "No comments found"){
+          setCommentsData([]);
+          if (sheetRef.current) {
+            sheetRef.current.snapToIndex(1);
+          }
+          return;
+        } 
+        setCommentsData(response.data || []);
+        setTimeout(() => {
+          if (sheetRef.current) {
+            sheetRef.current.snapToIndex(1);
+          }
+        }, 50);
+      } catch (error) {
+        console.error("Error fetching comments:", error);
+        setCommentsData([]);
       }
-    }, 50);
-  }, []);
+    };
+    
+    fetchComments();
+  }, [posts]);
 
-  const posts = useMemo(() => Array(10).fill(0), []);
   const commentsForActivePost = useMemo(() => {
-    if (activePostIndex === null) return [];
-    return Array(10)
-      .fill(0)
-      .map((_, i) => `Comment ${i + 1} on Post ${activePostIndex + 1}`);
-  }, [activePostIndex]);
+    return commentsData;
+  }, [commentsData]);
 
-  const renderItem = ({ index }: { index: number }) => (
+  const handleCommentAdded = useCallback(() => {
+    // Refresh comments after a new one is added
+    if (activePostID) {
+      const fetchComments = async () => {
+        try {
+          const response = await axios.get(
+            `http://localhost:3009/api/post/comments/${activePostID}`
+          );
+          console.log("Refreshed comments:", response.data);
+          if(response.data.message === "No comments found"){
+            setCommentsData([]);
+          } else {
+            setCommentsData(response.data || []);
+          }
+        } catch (error) {
+          console.error("Error refreshing comments:", error);
+        }
+      };
+      fetchComments();
+    }
+  }, [activePostID]);
+
+  const renderItem = ({ item, index }: { item: any; index: number }) => (
     <View style={styles.post}>
       <View style={styles.postHeader}>
         <View style={styles.avatar} />
         <Text style={styles.username} className="text-white2">
-          User {index + 1}
+          {item.user_id?.substring(0, 8) || `User ${index + 1}`}
         </Text>
       </View>
-      <Image
-        source={{
-          uri: "https://plus.unsplash.com/premium_photo-1673266633993-013acd448898?q=80&w=1974&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-        }}
-        style={styles.postImage}
-        className="rounded-[2.5rem] mx-2"
-      />
+      <Text style={styles.postContent} className="text-white2 px-4 py-2">
+        {item.text_content}
+      </Text>
+      {item.media_urls && (
+        <Image
+          source={{
+            uri: item.media_urls,
+          }}
+          style={styles.postImage}
+          className="rounded-[2.5rem] mx-2"
+        />
+      )}
       <View style={styles.postActions} className="gap-1">
-        <TouchableOpacity className="flex-row items-center justify-center border border-orange rounded-full w-10 h-10">
-          <Heart size={20} color="#fafafa" />
+        <TouchableOpacity 
+        onPress={async () => {
+          try {
+            const res = await handleLikePress(item.id);
+            if (res && !res.error) {
+              setLikedPosts((prev) => ({
+                ...prev,
+                [item.id]: true,
+              }));
+            } else {
+              console.log("Like failed on server response");
+            }
+          } catch (err) {
+            console.error("Like request failed:", err);
+          }
+        }}
+        className="flex-row items-center justify-center border border-orange rounded-full w-10 h-10">
+          <Heart size={20} color={likedPosts[item.id] ? "green" : "#fafafa"} />
         </TouchableOpacity>
         <TouchableOpacity
           onPress={() => handleCommentPress(index)}
@@ -98,6 +195,15 @@ const FeedScreen = () => {
           <Send size={20} color="#fafafa" />
         </TouchableOpacity>
       </View>
+      {item.interest_tags && item.interest_tags.length > 0 && (
+        <View style={styles.tagsContainer} className="flex-row flex-wrap px-4 py-2">
+          {item.interest_tags.map((tag: string, tagIndex: number) => (
+            <Text key={tagIndex} style={styles.tag} className="bg-orange rounded-full px-3 py-1 mr-2 mb-2">
+              #{tag}
+            </Text>
+          ))}
+        </View>
+      )}
     </View>
   );
 
@@ -123,6 +229,9 @@ const FeedScreen = () => {
         ref={sheetRef}
         snapPoints={snapPoints}
         data={commentsForActivePost}
+        postID={activePostID}
+        userID={userInfo?.user_id}
+        onCommentAdded={handleCommentAdded}
       />
     </View>
   );
@@ -173,8 +282,19 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     color: "#FE744D",
   },
-  commentButton: {
-    padding: 5,
+  postContent: {
+    fontSize: 16,
+    marginVertical: 10,
+  },
+  tagsContainer: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    paddingHorizontal: 10,
+  },
+  tag: {
+    fontSize: 12,
+    color: "#1B1730",
+    fontWeight: "600",
   },
   fab: {
     position: "absolute",

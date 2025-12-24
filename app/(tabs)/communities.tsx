@@ -6,6 +6,7 @@ import CommunityPostCard from "@/components/CommunityPostCard";
 import { TouchableOpacity } from "react-native-gesture-handler";
 import { MessageCircle, Plus } from "lucide-react-native";
 import { router } from "expo-router";
+import ComingSoon from "@/components/ComingSoon";
 
 const dummyPosts = [
   {
@@ -84,33 +85,34 @@ const Communities = () => {
     : dummyPosts.filter(p => p.community === currentCommunity);
 
   return (
-    <SafeAreaView className="flex-1 bg-primary">
-      <CommunityTabs onChange={setCurrentCommunity} />
-      <FlatList
-        data={filteredPosts}
-        keyExtractor={(item) => item.id}
-        contentContainerStyle={{ padding: 12 }}
-        renderItem={({ item }) => <CommunityPostCard post={item} />}
-      />
-      {/* Floating Buttons */}
-      <View style={styles.fabContainer} className="flex-1 gap-2">
-        <TouchableOpacity
-          onPress={() => router.push({ pathname: "/modal", params: { community: currentCommunity }})}
-          style={styles.fab}
-          className="bg-orange w-7 h-7 rounded-full p-4 mb-3 shadow-md"
-        >
-          <Plus color="white" size={24} />
-        </TouchableOpacity>
+    // <SafeAreaView className="flex-1 bg-primary">
+    //   <CommunityTabs onChange={setCurrentCommunity} />
+    //   <FlatList
+    //     data={filteredPosts}
+    //     keyExtractor={(item) => item.id}
+    //     contentContainerStyle={{ padding: 12 }}
+    //     renderItem={({ item }) => <CommunityPostCard post={item} />}
+    //   />
+    //   {/* Floating Buttons */}
+    //   <View style={styles.fabContainer} className="flex-1 gap-2">
+    //     <TouchableOpacity
+    //       onPress={() => router.push({ pathname: "/modal", params: { community: currentCommunity }})}
+    //       style={styles.fab}
+    //       className="bg-orange w-7 h-7 rounded-full p-4 mb-3 shadow-md"
+    //     >
+    //       <Plus color="white" size={24} />
+    //     </TouchableOpacity>
 
-        <TouchableOpacity
-          onPress={() => router.push({ pathname: "/", params: { community: currentCommunity }})}
-          style={styles.fab}
-          className="bg-[#FE744D] rounded-full p-4 shadow-md"
-        >
-          <MessageCircle color="white" size={24} />
-        </TouchableOpacity>
-      </View>
-    </SafeAreaView>
+    //     <TouchableOpacity
+    //       onPress={() => router.push({ pathname: "/", params: { community: currentCommunity }})}
+    //       style={styles.fab}
+    //       className="bg-[#FE744D] rounded-full p-4 shadow-md"
+    //     >
+    //       <MessageCircle color="white" size={24} />
+    //     </TouchableOpacity>
+    //   </View>
+    // </SafeAreaView>
+    <ComingSoon/>
   );
 };
 
