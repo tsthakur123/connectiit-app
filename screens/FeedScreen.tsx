@@ -88,14 +88,25 @@ const FeedScreen = () => {
   // Like function
   const handleLikePress = useCallback(
     async (postID: string) => {
-      if (!userInfo) return;
+      if (!userInfo) {
+        console.warn("User info not loaded yet.");
+        return;
+      }
+
       try {
+        console.log("Calling like API for post:", postID, "user:", userInfo.user_id);
+        // Replace 192.168.x.x with your local machine IP if using Expo Go
         const res = await axios.post(
-          `http://localhost:3009/api/post/posts/${postID}/like`,
-          { userId: userInfo.user_id }
+          `http://localhost:3009/api/post/posts/${postID}/like?userId=${userInfo.user_id}`
         );
+
+        console.log("Like API response:", res.data);
+
         if (!res.data.error) {
-          setLikedPosts((prev) => ({ ...prev, [postID]: true }));
+          setLikedPosts((prev) => ({
+            ...prev,
+            [postID]: true,
+          }));
         }
       } catch (err) {
         console.error("Error liking post:", err);
@@ -163,6 +174,7 @@ const FeedScreen = () => {
       <View style={{ flexDirection: "row", alignItems: "center", padding: 10 }}>
         <TouchableOpacity
           onPress={() => handleLikePress(item.id)}
+          disabled={!userInfo} // disable until userInfo loaded
           style={{
             flexDirection: "row",
             justifyContent: "center",
@@ -173,6 +185,7 @@ const FeedScreen = () => {
             width: 40,
             height: 40,
             marginRight: 5,
+            opacity: userInfo ? 1 : 0.5, // visually disabled
           }}
         >
           <Heart size={20} color={likedPosts[item.id] ? "green" : "#fafafa"} />
