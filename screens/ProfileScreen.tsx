@@ -8,6 +8,7 @@ import { View, Text, Image, TouchableOpacity, ScrollView } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import { Pencil } from "lucide-react-native";
+import { ExpandableSection } from "../components/ExpandableSection";
 
 export const ProfileScreen = () => {
 
@@ -113,19 +114,19 @@ export const ProfileScreen = () => {
       <View className="mt-6 mx-auto bg-white2 w-[90%] h-16 rounded-full flex-row items-center justify-around shadow-md">
         <View className="items-center">
           <Text className="text-secondary font-bold">Followers</Text>
-          <Text className="text-xl font-bold text-primary">{user?.followers_count || 0}</Text>
+          <Text className="text-xl font-bold text-primary">
+            {user?.followers_count ?? 0}
+          </Text>
         </View>
-       
-
 
         <View className="items-center">
           <Text className="text-secondary font-bold">Following</Text>
-          <Text className="text-xl font-bold text-primary">{user?.following_count || 0}</Text>
+          <Text className="text-xl font-bold text-primary">
+            {user?.following_count ?? 0}
+          </Text>
         </View>
       </View>
-
-      {/* Expandable Section */}
-      {/* <View className="mt-4 px-4">
+      <View className="mt-4 px-4">
         <ExpandableSection interests={user?.interests || []} />
       </View> */}
 
@@ -190,6 +191,6 @@ export const ProfileScreen = () => {
         })}
       </View>
 
-    </ScrollView>
-  );
+    </ScrollView>)
+  ;
 };
