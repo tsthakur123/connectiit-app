@@ -1,9 +1,12 @@
 import React, { useState } from 'react';
 import { View, Text, Pressable, Alert } from 'react-native';
+
 // import { AuthService } from '@/services/api';
+
 
 export const BackendTest: React.FC = () => {
   const [testing, setTesting] = useState(false);
+
 
   // const testBackendConnection = async () => {
   //   setTesting(true);
@@ -36,10 +39,11 @@ export const BackendTest: React.FC = () => {
   //   }
   // };
 
+
   return (
     <View className="p-4">
       <Pressable
-        // onPress={testBackendConnection}
+
         disabled={testing}
         className={`px-4 py-2 rounded-lg ${
           testing ? 'bg-gray-400' : 'bg-green-600'

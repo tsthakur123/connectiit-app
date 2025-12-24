@@ -49,9 +49,24 @@ const CommentButton = ({
     </Pressable>
   );
 };
+const handleLikePress = async (post_ID) => {
+  try {
+   const isLiked= await axios.post(
+      `http://localhost:3009/api/post/posts/${post_ID}/like?userId=${userInfo?.user_id}`
+    );
+    return isLiked.data;
+  } catch (error) {
+    console.error("Error liking post:", error);
+  }
+};
 
 const FeedScreen = () => {
   const sheetRef = useRef<BottomSheet>(null);
+  const userInfoFN= async() => {
+  const res=await getuserInfo();
+  console.log("User Info in Feed Screen:", res);
+    userInfo=res;
+  }
   const snapPoints = useMemo(() => ["40%", "90%"], []);
   const [userInfo, setUserInfo] = useState<any>(null);
   const [postsData, setPostsData] = useState<any[]>([]);
