@@ -1,34 +1,52 @@
-import React, { useEffect, useState } from "react";
+
+import React, { useCallback, useState } from "react";
 import { router } from "expo-router";
 import {jwtDecode} from "jwt-decode";
-import { View, Text, Image, TouchableOpacity, ScrollView, Button } from "react-native";
+import axios from "axios";
+import { useFocusEffect } from "@react-navigation/native";
+import { View, Text, Image, TouchableOpacity, ScrollView } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+
 import { Pencil } from "lucide-react-native";
+import { ExpandableSection } from "../components/ExpandableSection";
 
 import { ExpandableSection } from "@/components/ExpandableSection";
 
 export const ProfileScreen = () => {
-  const [user, setUser] = useState<any>(null);
 
-  useEffect(() => {
-    const loadUser = async () => {
-      try {
-        const token = await AsyncStorage.getItem("token");
-        const userinfo=await jwtDecode(token||"");
-        console.log(userinfo)
-        setUser(userinfo)
-      } catch (error) {
-        console.error("Error decoding token:", error);
-      }
-    };
-    loadUser();
+  const [user, setUser] = useState<any>(null);
+  const [userposts, setUserposts] = useState<any>([]);
+
+  const loadUser = useCallback(async () => {
+    try {
+      const token = await AsyncStorage.getItem("token");
+      if (!token) return;
+
+      const userinfo: any = jwtDecode(token || "");
+      const usedata = await axios.get(
+        `http://localhost:3006/api/users/me/${userinfo.user_id}`
+      );
+      const response = await axios.get(
+        `http://localhost:3009/api/post/user/${userinfo.user_id}/posts`
+      );
+
+      setUser(usedata.data);
+      setUserposts(response.data);
+    } catch (error) {
+      console.error("Error fetching user data:", error);
+    }
   }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadUser();
+    }, [loadUser])
+  );
 
   return (
     <ScrollView className="flex-1 bg-primary">
       {/* Header Section */}
       <View className="h-32 w-full bg-[#1A1A1A] rounded-b-[3rem] overflow-hidden relative">
-        {/* Background Image */}
         <Image
           source={{
             uri: "https://images.unsplash.com/photo-1513909894411-7d7e04c28ecd?q=80",
@@ -41,78 +59,140 @@ export const ProfileScreen = () => {
         <View className="absolute left-1/2 -translate-x-1/2 items-center">
           <View className="w-28 h-28 rounded-full bg-white shadow-lg justify-center items-center overflow-hidden">
             <Image
-              source={{
-                uri: `${user?.image}`,
-              }}
+              source={{ uri: `${user?.profile_url}` }}
               className="w-full h-full"
               resizeMode="cover"
             />
           </View>
 
           {/* Edit Icon */}
-          <TouchableOpacity className="absolute bottom-2 right-2 bg-[#FE744D] p-2 rounded-full">
+          <TouchableOpacity
+            className="absolute bottom-2 right-2 bg-[#FE744D] p-2 rounded-full"
+            onPress={() => router.push("/edit-profile")}
+          >
             <Pencil size={16} color="white" />
           </TouchableOpacity>
         </View>
       </View>
 
-      {/* Name + College */}
-      <View className="mt-6 items-center">
+      {/* Name + College + Bio + Secondary Email */}
+      <View className="mt-6 items-center px-4">
         <Text className="text-3xl font-bold text-white">{user?.name || "User"}</Text>
-        <Text className="text-lg text-gray-300 font-semibold">
-          IIT (BHU) Varanasi
-        </Text>
-          <TouchableOpacity
-            className="mt-2 px-4 py-1 border-2 border-gray-500 rounded-full"
-            onPress={async () => {
-              try {
-                await AsyncStorage.removeItem("token"); 
-                console.log("JWT removed, logged out");
-                router.push("/");
-              } catch (e) {
-                console.error("Error clearing token:", e);
-              }
-            }}
-          >
-            <Text className="text-lg text-gray-300 font-semibold">Logout</Text>
-          </TouchableOpacity>
+        <Text className="text-lg text-white/70 font-semibold">{user?.college || "IIT"}</Text>
+
+        <View className="mt-4 w-full rounded-xl p-4" style={{ backgroundColor: "#262438" }}>
+          {user?.bio ? (
+            <>
+              <Text className="text-white font-semibold mb-2">Bio</Text>
+              <Text className="text-white/70 text-sm mb-3">{user.bio}</Text>
+            </>
+          ) : null}
+
+          {user?.secondary_email ? (
+            <>
+              <Text className="text-white font-semibold mb-2">Secondary Email</Text>
+              <Text className="text-white/70 text-sm">{user.secondary_email}</Text>
+            </>
+          ) : null}
+        </View>
+
+        <TouchableOpacity
+          className="mt-4 px-4 py-1 rounded-full"
+          style={{ borderWidth: 2, borderColor: "#FE744D" }}
+          onPress={async () => {
+            try {
+              await AsyncStorage.removeItem("token");
+              router.push("/");
+            } catch (e) {
+              console.error("Error clearing token:", e);
+            }
+          }}
+        >
+          <Text className="text-white font-semibold">Logout</Text>
+        </TouchableOpacity>
       </View>
 
       {/* Followers / Following */}
       <View className="mt-6 mx-auto bg-white2 w-[90%] h-16 rounded-full flex-row items-center justify-around shadow-md">
         <View className="items-center">
           <Text className="text-secondary font-bold">Followers</Text>
-          <Text className="text-xl font-bold text-primary">120</Text>
+          <Text className="text-xl font-bold text-primary">
+            {user?.followers_count ?? 0}
+          </Text>
         </View>
 
         <View className="items-center">
           <Text className="text-secondary font-bold">Following</Text>
-          <Text className="text-xl font-bold text-primary">180</Text>
+          <Text className="text-xl font-bold text-primary">
+            {user?.following_count ?? 0}
+          </Text>
         </View>
       </View>
-
-      {/* Expandable Section */}
       <View className="mt-4 px-4">
-        <ExpandableSection />
-      </View>
+        <ExpandableSection interests={user?.interests || []} />
+      </View> */}
 
       {/* Posts Grid */}
-      <View className="flex flex-wrap flex-row px-2 gap-2 mt-10">
-        {[...Array(12)].map((_, index) => {
+      <View className="mt-10 px-2 flex flex-row flex-wrap justify-between">
+        {userposts.map((post, index) => {
           const isLarge = index % 4 === 0;
+          const hasImage = post.media_urls && post.media_urls.length > 0;
+          const imageUrl = hasImage ? post.media_urls[0] : null;
+
 
           return (
-            <Image
-              key={index}
-              source={{ uri: `https://picsum.photos/id/${index + 10}/500/500` }}
-              className={`rounded-xl ${
-                isLarge ? "w-[66%] h-48" : "w-[31%] h-32"
-              }`}
-              style={{ marginBottom: 8 }}
-            />
+            <View
+              key={post.id}
+              style={{
+                width: isLarge ? "66%" : "31%",
+                marginBottom: 8,
+              }}
+            >
+              {hasImage ? (
+                <Image
+                  source={{ uri: imageUrl }}
+                  className="rounded-xl"
+                  style={{
+                    height: isLarge ? 220 : 140,
+                    backgroundColor: "#262438",
+                  }}
+                  resizeMode="cover"
+                />
+              ) : (
+                <View
+                  className="rounded-xl p-4 justify-center"
+                  style={{
+                    height: isLarge ? 220 : 140,
+                    backgroundColor: "#262438",
+                  }}
+                >
+                  <Text className="text-white font-semibold text-base">{post.text_content}</Text>
+                </View>
+              )}
+
+              {/* Likes & comments overlay */}
+              <View
+                className="absolute bottom-2 left-2 px-2 py-1 rounded-full flex-row items-center"
+                style={{ backgroundColor: "#1B1730AA" }}
+              >
+                <Text className="text-white text-xs mr-2">❤️ {post.likes_count}</Text>
+                <Text className="text-white text-xs">💬 {post.comments_count}</Text>
+              </View>
+
+              {/* Interest tag */}
+              {post.interest_tags?.length > 0 && (
+                <View
+                  className="absolute top-2 left-2 px-2 py-1 rounded-full"
+                  style={{ backgroundColor: "#FE744DAA" }}
+                >
+                  <Text className="text-white text-xs">#{post.interest_tags[0]}</Text>
+                </View>
+              )}
+            </View>
           );
         })}
       </View>
-    </ScrollView>
-  );
+
+    </ScrollView>)
+  ;
 };
