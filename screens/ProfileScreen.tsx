@@ -10,7 +10,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Pencil } from "lucide-react-native";
 import { ExpandableSection } from "../components/ExpandableSection";
 
-import { ExpandableSection } from "@/components/ExpandableSection";
+// import { ExpandableSection } from "@/components/ExpandableSection";
 
 export const ProfileScreen = () => {
 
