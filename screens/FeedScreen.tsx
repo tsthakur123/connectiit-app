@@ -28,10 +28,13 @@ import Animated, {
   Easing,
   runOnJS,
 } from "react-native-reanimated";
+import { FeedSkeleton } from "@/components/FeedSkeleton";
 
 const FeedScreen = () => {
   const sheetRef = useRef<BottomSheet>(null);
   const snapPoints = useMemo(() => ["40%", "90%"], []);
+
+  const [initialLoading, setInitialLoading] = useState(true);
 
   // ❤️ Reanimated values
   const scale = useSharedValue(0);
@@ -74,6 +77,7 @@ const FeedScreen = () => {
       console.error("Feed fetch error:", err);
     } finally {
       setLoading(false);
+      setInitialLoading(false);
     }
   };
 
@@ -270,14 +274,27 @@ const FeedScreen = () => {
     <View style={styles.container}>
       <Topbar />
 
-      <FlatList
-        data={posts}
-        keyExtractor={(item) => item.id}
-        renderItem={renderItem}
-        onEndReached={fetchFeed}
-        onEndReachedThreshold={0.6}
-        contentContainerStyle={{ paddingBottom: 120 }}
-      />
+      {initialLoading ? (
+        <FeedSkeleton />
+      ) : (
+        <FlatList
+          data={posts}
+          keyExtractor={(item) => item.id}
+          renderItem={renderItem}
+          onEndReached={fetchFeed}
+          onEndReachedThreshold={0.6}
+          contentContainerStyle={{ paddingBottom: 120 }}
+          ListFooterComponent={
+            loading ? (
+              <View style={{ paddingVertical: 20 }}>
+                <Text style={{ color: "#aaa", textAlign: "center" }}>
+                  Loading more...
+                </Text>
+              </View>
+            ) : null
+          }
+        />
+      )}
 
       <TouchableOpacity
         style={styles.fab}

@@ -7,6 +7,8 @@ import { TouchableOpacity } from "react-native-gesture-handler";
 import { MessageCircle, Plus } from "lucide-react-native";
 import { router } from "expo-router";
 import ComingSoon from "@/components/ComingSoon";
+// import { Shimmer } from "@/components/Shimmer";
+// const [loading, setLoading] = useState(true);
 
 const dummyPosts = [
   {
@@ -18,7 +20,8 @@ const dummyPosts = [
     upvotes: 120,
     comments: 25,
     time: "2h ago",
-    image: "https://images.unsplash.com/photo-1498050108023-c5249f4df085?q=80&w=2072&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D", // sample image
+    image:
+      "https://images.unsplash.com/photo-1498050108023-c5249f4df085?q=80&w=2072&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D", // sample image
   },
   {
     id: "2",
@@ -29,7 +32,8 @@ const dummyPosts = [
     upvotes: 340,
     comments: 48,
     time: "5h ago",
-    image: "https://images.unsplash.com/photo-1512820790803-83ca734da794?q=80&w=2098&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+    image:
+      "https://images.unsplash.com/photo-1512820790803-83ca734da794?q=80&w=2098&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
   },
   {
     id: "3",
@@ -51,7 +55,8 @@ const dummyPosts = [
     upvotes: 120,
     comments: 25,
     time: "2h ago",
-    image: "https://images.unsplash.com/photo-1498050108023-c5249f4df085?q=80&w=2072&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D", // sample image
+    image:
+      "https://images.unsplash.com/photo-1498050108023-c5249f4df085?q=80&w=2072&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D", // sample image
   },
   {
     id: "5",
@@ -62,7 +67,8 @@ const dummyPosts = [
     upvotes: 340,
     comments: 48,
     time: "5h ago",
-    image: "https://images.unsplash.com/photo-1512820790803-83ca734da794?q=80&w=2098&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+    image:
+      "https://images.unsplash.com/photo-1512820790803-83ca734da794?q=80&w=2098&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
   },
   {
     id: "6",
@@ -80,39 +86,63 @@ const dummyPosts = [
 const Communities = () => {
   const [currentCommunity, setCurrentCommunity] = useState("all");
 
-  const filteredPosts = currentCommunity === "all"
-    ? dummyPosts
-    : dummyPosts.filter(p => p.community === currentCommunity);
+  /*
+  const filteredPosts =
+    currentCommunity === "all"
+      ? dummyPosts
+      : dummyPosts.filter((p) => p.community === currentCommunity);
+  */
 
   return (
-    // <SafeAreaView className="flex-1 bg-primary">
-    //   <CommunityTabs onChange={setCurrentCommunity} />
-    //   <FlatList
-    //     data={filteredPosts}
-    //     keyExtractor={(item) => item.id}
-    //     contentContainerStyle={{ padding: 12 }}
-    //     renderItem={({ item }) => <CommunityPostCard post={item} />}
-    //   />
-    //   {/* Floating Buttons */}
-    //   <View style={styles.fabContainer} className="flex-1 gap-2">
-    //     <TouchableOpacity
-    //       onPress={() => router.push({ pathname: "/modal", params: { community: currentCommunity }})}
-    //       style={styles.fab}
-    //       className="bg-orange w-7 h-7 rounded-full p-4 mb-3 shadow-md"
-    //     >
-    //       <Plus color="white" size={24} />
-    //     </TouchableOpacity>
+     /*
+    <SafeAreaView className="flex-1 bg-primary">
+      <CommunityTabs onChange={setCurrentCommunity} />
 
-    //     <TouchableOpacity
-    //       onPress={() => router.push({ pathname: "/", params: { community: currentCommunity }})}
-    //       style={styles.fab}
-    //       className="bg-[#FE744D] rounded-full p-4 shadow-md"
-    //     >
-    //       <MessageCircle color="white" size={24} />
-    //     </TouchableOpacity>
-    //   </View>
-    // </SafeAreaView>
-    <ComingSoon/>
+      {loading ? (
+        <View style={{ padding: 12 }}>
+          <CommunitySkeleton />
+        </View>
+      ) : (
+        <FlatList
+          data={filteredPosts}
+          keyExtractor={(item) => item.id}
+          contentContainerStyle={{ padding: 12 }}
+          renderItem={({ item }) => (
+            <CommunityPostCard post={item} />
+          )}
+        />
+      )}
+
+      // Floating Buttons
+      <View style={styles.fabContainer}>
+        <TouchableOpacity
+          onPress={() =>
+            router.push({
+              pathname: "/modal",
+              params: { community: currentCommunity },
+            })
+          }
+          style={styles.fab}
+          className="bg-orange mb-3"
+        >
+          <Plus color="white" size={24} />
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          onPress={() =>
+            router.push({
+              pathname: "/",
+              params: { community: currentCommunity },
+            })
+          }
+          style={styles.fab}
+        >
+          <MessageCircle color="white" size={24} />
+        </TouchableOpacity>
+      </View>
+    </SafeAreaView>
+    */
+    <ComingSoon />
   );
 };
 
