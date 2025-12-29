@@ -130,7 +130,7 @@ export const ProfileScreen = () => {
       </View>
       <View className="mt-4 px-4">
         <ExpandableSection interests={user?.interests || []} />
-      </View> */}
+      </View> 
 
       {/* Posts Grid */}
       <View className="mt-10 px-2 flex flex-row flex-wrap justify-between">
