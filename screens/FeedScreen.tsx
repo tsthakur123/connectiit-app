@@ -29,6 +29,7 @@ import Animated, {
   runOnJS,
 } from "react-native-reanimated";
 import { FeedSkeleton } from "@/components/FeedSkeleton";
+import MediaCarousel from "@/components/MediaCarousel";
 
 const FeedScreen = () => {
   const sheetRef = useRef<BottomSheet>(null);
@@ -216,31 +217,31 @@ const FeedScreen = () => {
 
       <Text style={styles.caption}>{item.caption}</Text>
 
-      {item.cover_media_url && (
-        <View style={{ position: "relative" }}>
-          <Pressable
-            onPress={() => handleImageTap(item)}
-            style={{ position: "relative" }}
-          >
-            <Image
-              source={{ uri: item.cover_media_url }}
-              style={styles.postImage}
-            />
+      {/* ✅ MEDIA CAROUSEL (NO EXTRA PRESSABLE) */}
+      {item.media?.length > 0 && (
+        <MediaCarousel
+          media={item.media}
+          post={item}
+          likeAnimatingPost={likeAnimatingPost}
+          heartStyle={heartStyle}
+          onDoubleTap={handleImageTap}
+        />
+      )}
 
-            {likeAnimatingPost === item.id && (
+      {/* {likeAnimatingPost === item.id && (
               <Animated.View style={[styles.heartOverlay, heartStyle]}>
                 <Heart size={90} color="#FE744D" fill="#FE744D" />
               </Animated.View>
-            )}
-          </Pressable>
+            )} */}
+      {/* </Pressable> */}
 
-          {likeAnimatingPost === item.id && (
+      {/* {likeAnimatingPost === item.id && (
             <Animated.View style={[styles.heartOverlay, heartStyle]}>
               <Heart size={90} color="#FE744D" fill="#FE744D" />
             </Animated.View>
-          )}
-        </View>
-      )}
+          )} */}
+      {/* </View> */}
+      {/* )} */}
 
       <View style={styles.actions}>
         <TouchableOpacity

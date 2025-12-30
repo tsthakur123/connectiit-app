@@ -66,7 +66,7 @@ const Search = () => {
         action: isFriend ? "unfollow" : "follow",
       };
 
-      await axios.post(
+      const res = await axios.post(
         "http://localhost:3006/api/users/follow/user",
         payload,
         {
@@ -79,7 +79,7 @@ const Search = () => {
         // Update UI immediately
         setUsers((prev) =>
           prev.map((u) =>
-            u.user_id === userId ? { ...u, isFriend: !currentlyFriend } : u
+            u.user_id === userId ? { ...u, isFriend: !isFriend } : u
           )
         );
       }
@@ -91,51 +91,58 @@ const Search = () => {
   // ───────────────────────────────
   // Search loader
   // ───────────────────────────────
-  const loader = async (q: string) => {
-    if (!q || q.trim().length === 0) {
-      setUsers([]);
-      setLoading(false);
-      return;
-    }
+ const loader = async (q: string) => {
+  if (!q || q.trim().length === 0) {
+    setUsers([]);
+    setLoading(false);
+    return;
+  }
 
-    if (!userinfo) return;
+  if (!userinfo) return;
 
-    try {
+  try {
+    setLoading(true); // ✅ START SHIMMER
 
-      const tokenValue = await AsyncStorage.getItem("token");
-      if (!tokenValue) return;
-      const payload = {
-        user_id: userinfo.user_id,
-      };
-      const res = await axios.post(
-        `http://localhost:3006/api/users/${query}`,
-        payload,
-        {
-          headers: {
-            Authorization: `Bearer ${tokenValue}`,
-          },
-        }
-      );
+    const tokenValue = await AsyncStorage.getItem("token");
+    if (!tokenValue) return;
 
-      setUsers(res.data);
-    } catch (err) {
-      console.error("Search error:", err);
-      setUsers([]);
-    } finally {
-      setLoading(false);
-    }
-  };
+    const payload = {
+      user_id: userinfo.user_id,
+    };
+
+    const res = await axios.post(
+      `http://localhost:3006/api/users/${q}`,
+      payload,
+      {
+        headers: {
+          Authorization: `Bearer ${tokenValue}`,
+        },
+      }
+    );
+
+    setUsers(res.data);
+  } catch (err) {
+    console.error("Search error:", err);
+    setUsers([]);
+  } finally {
+    setLoading(false); // ✅ STOP SHIMMER
+  }
+};
+
 
   // ───────────────────────────────
   // Debounce search
   // ───────────────────────────────
-  useEffect(() => {
-    const delay = setTimeout(() => {
-      loader(query);
-    }, 400);
+ useEffect(() => {
+  if (!userinfo) return;
 
-    return () => clearTimeout(delay);
-  }, [query]);
+  const delay = setTimeout(() => {
+    loader(query);
+  }, 400);
+
+  return () => clearTimeout(delay);
+}, [query, userinfo]);
+
 
   return (
     <SafeAreaView className="flex-1 bg-primary px-4">
@@ -151,10 +158,10 @@ const Search = () => {
       </View>
 
          {/* Results / Shimmer */}
-      {loading ? (
+      {loading && query.length > 0 ? (
         <SearchSkeleton />
       ) : (
-      {/* User Cards */}
+      // {/* User Cards */}r
       <FlatList
         data={users}
         keyExtractor={(item) => item.user_id}
