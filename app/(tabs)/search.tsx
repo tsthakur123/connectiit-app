@@ -1,3 +1,4 @@
+import React from "react";
 import {
   View,
   Text,
@@ -13,12 +14,28 @@ import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { jwtDecode } from "jwt-decode";
 
+const token = async () => {
+  const token = await AsyncStorage.getItem("token");
+  if (!token) return;
+  return token;
+};
 import {SearchSkeleton} from "@/components/SearchSkeleton";
+
 
 const Search = () => {
   const router = useRouter();
 
   const [userinfo, setUserinfo] = useState<any>(null);
+
+  useEffect(() => {
+    token().then((data) => {
+      if (data) {
+        const userinfo: any = jwtDecode(data);
+        setUserinfo(userinfo);
+      }
+    });
+  }, []);
+
   const [query, setQuery] = useState("");
   const [users, setUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
@@ -57,11 +74,15 @@ const Search = () => {
         }
       );
 
-      setUsers((prev) =>
-        prev.map((u) =>
-          u.user_id === userId ? { ...u, isFriend: !isFriend } : u
-        )
-      );
+
+      if (res.status === 200) {
+        // Update UI immediately
+        setUsers((prev) =>
+          prev.map((u) =>
+            u.user_id === userId ? { ...u, isFriend: !currentlyFriend } : u
+          )
+        );
+      }
     } catch (err) {
       console.error("Follow error:", err);
     }
@@ -80,11 +101,20 @@ const Search = () => {
     if (!userinfo) return;
 
     try {
-      setLoading(true);
 
+      const tokenValue = await AsyncStorage.getItem("token");
+      if (!tokenValue) return;
+      const payload = {
+        user_id: userinfo.user_id,
+      };
       const res = await axios.post(
-        `http://localhost:3006/api/users/${q}`,
-        { user_id: userinfo.user_id }
+        `http://localhost:3006/api/users/${query}`,
+        payload,
+        {
+          headers: {
+            Authorization: `Bearer ${tokenValue}`,
+          },
+        }
       );
 
       setUsers(res.data);
@@ -105,7 +135,7 @@ const Search = () => {
     }, 400);
 
     return () => clearTimeout(delay);
-  }, [query, userinfo]);
+  }, [query]);
 
   return (
     <SafeAreaView className="flex-1 bg-primary px-4">
@@ -120,35 +150,34 @@ const Search = () => {
         />
       </View>
 
-      {/* Results / Shimmer */}
+         {/* Results / Shimmer */}
       {loading ? (
         <SearchSkeleton />
       ) : (
-        <FlatList
-          data={users}
-          keyExtractor={(item) => item.user_id}
-          className="mt-2"
-          renderItem={({ item }) => (
-            <TouchableOpacity
-              onPress={() =>
-                router.push({
-                  pathname: "/userprofile",
-                  params: { id: item.user_id },
-                })
-              }
-              className="flex-row items-center bg-secondary rounded-2xl p-4 mb-3"
-            >
-              <Image
-                source={{ uri: item.profile_url }}
-                className="w-12 h-12 rounded-full mr-4"
-              />
+      {/* User Cards */}
+      <FlatList
+        data={users}
+        keyExtractor={(item) => item.user_id}
+        className="mt-2"
+        renderItem={({ item }) => (
+          <TouchableOpacity
+            onPress={() =>
+              router.push({
+                pathname: "/profile/[username]",
+                params: { username: item.username, userID: item.user_id },
+              })
+            }
+            className="flex-row items-center bg-secondary rounded-2xl p-4 mb-3"
+          >
+            <Image
+              source={{ uri: item.profile_url }}
+              className="w-12 h-12 rounded-full mr-4"
+            />
+            <View className="flex-1">
+              <Text className="text-white font-semibold">{item.username}</Text>
+              <Text className="text-gray-400 text-sm">{item.name}</Text>
+            </View>
 
-              <View className="flex-1">
-                <Text className="text-white font-semibold">
-                  {item.username}
-                </Text>
-                <Text className="text-gray-400 text-sm">{item.name}</Text>
-              </View>
 
               <TouchableOpacity
                 onPress={() =>
