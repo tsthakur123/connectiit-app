@@ -66,7 +66,7 @@ export const ProfileScreen = () => {
   const imageLoadCount = useRef(0);
   const [allImagesLoaded, setAllImagesLoaded] = useState(false);
 
-// sample test case
+  // sample test case
   const baniUserData: User = {
     id: "9384bdb5-9305-4ae9-be03-1155f8e43a54",
     email: "tarun.singh.cer22@itbhu.ac.in",
@@ -89,7 +89,7 @@ export const ProfileScreen = () => {
     friends: null,
   };
 
-// sample test case
+  // sample test case
   const images: Post[] = [...Array(14)].map((_, index) => ({
     id: `post_${index}`,
     // Make some posts text-only for variety
@@ -357,12 +357,14 @@ export const ProfileScreen = () => {
       </View>
 
       {/* icon for posts */}
-      <View className="w-full h-10 mt-6 flex items-center justify-center">
-        <Image
-          source={require("../assets/images/post_icon.png")}
-          className="w-10 h-10"
-          resizeMode="contain"
-        />
+      <View className="px-8 mt-6">
+        <View className="w-full border-b border-orange h-12 mb-2 flex items-center justify-center">
+          <Image
+            source={require("../assets/images/post_icon.png")}
+            className="w-10 h-10"
+            resizeMode="contain"
+          />
+        </View>
       </View>
 
       {/* Posts Grid with likes, comments and tags*/}

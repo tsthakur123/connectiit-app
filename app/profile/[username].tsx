@@ -77,7 +77,10 @@ const images: Post[] = [...Array(14)].map((_, index) => ({
 }));
 
 const UserProfileScreen = () => {
-  const { username, userID } = useLocalSearchParams<{ username: string; userID: string }>();
+  const { username, userID } = useLocalSearchParams<{
+    username: string;
+    userID: string;
+  }>();
   const [user, setUser] = useState<any>(null); // current seen profile user
   const [userinfo, setUserinfo] = useState<any>(null); //login user
 
@@ -135,7 +138,7 @@ const UserProfileScreen = () => {
   };
 
   const loadUser = useCallback(async () => {
-    if (!userinfo || !username){
+    if (!userinfo || !username) {
       return;
     }
     setLoading(true);
@@ -152,7 +155,7 @@ const UserProfileScreen = () => {
         { user_id: userinfo.user_id }
       );
       // The API returns an array, so we take the first element.
-      const fetchedUser = userRes.data[0]; 
+      const fetchedUser = userRes.data[0];
       // if (!fetchedUser) throw new Error("User not found from API");
       setUser(fetchedUser);
 
@@ -210,6 +213,16 @@ const UserProfileScreen = () => {
     })();
   }, []);
 
+  const handleBackPress = () => {
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      // If there's no back history (e.g., on page refresh),
+      // navigate to a default screen. You may need to change "/" to your home route.
+      router.replace("/search");
+    }
+  };
+
   if (loading) {
     return (
       <SafeAreaView className="flex-1 justify-center items-center bg-primary">
@@ -222,7 +235,7 @@ const UserProfileScreen = () => {
     return (
       <SafeAreaView className="flex-1 justify-center items-center bg-primary">
         <TouchableOpacity
-          onPress={() => router.back()}
+          onPress={handleBackPress}
           className="absolute top-14 left-4 z-10"
         >
           <ArrowLeft size={28} color="white" />
@@ -238,7 +251,6 @@ const UserProfileScreen = () => {
       ? `${firstName.substring(0, 20)}...`
       : firstName
     : "User";
-  
 
   const totalImagesWithMedia = userposts.filter(
     (p) => p.media_urls && p.media_urls.length > 0
@@ -256,7 +268,7 @@ const UserProfileScreen = () => {
       {/* Header Section */}
       <View className="h-52 w-full bg-[#1A1A1A] rounded-b-[1.7rem] overflow-hidden relative">
         <TouchableOpacity
-          onPress={() => router.back()}
+          onPress={handleBackPress}
           className="absolute top-14 left-4 z-10 bg-black/30 rounded-full p-1.5"
         >
           <ArrowLeft size={24} color="white" />
@@ -322,7 +334,7 @@ const UserProfileScreen = () => {
           <Text className="text-orange font-semibold text-lg mr-2">
             {user.isFriend ? "Connected" : "Connect"}
           </Text>
-          {user.isFriend ? "" :<UserPlus color="#FE744D" size={20} />} 
+          {user.isFriend ? "" : <UserPlus color="#FE744D" size={20} />}
         </TouchableOpacity>
       </View>
 
@@ -350,12 +362,14 @@ const UserProfileScreen = () => {
       </View>
 
       {/* icon for posts */}
-      <View className="w-full border-b border-orange h-12 mt-6 mb-2 p-4 flex items-center justify-center">
-        <Image
-          source={require("../../assets/images/post_icon.png")}
-          className="w-10 h-10"
-          resizeMode="contain"
-        />
+      <View className="px-8 mt-6">
+        <View className="w-full border-b border-orange h-12 mb-2 flex items-center justify-center">
+          <Image
+            source={require("../../assets/images/post_icon.png")}
+            className="w-10 h-10"
+            resizeMode="contain"
+          />
+        </View>
       </View>
 
       {/* Posts Grid with likes, comments and tags*/}
