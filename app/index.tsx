@@ -56,7 +56,7 @@ export default function Login() {
             await AsyncStorage.setItem('token', token);
             await AsyncStorage.setItem('user', JSON.stringify(user));
             Alert.alert("Login Success", "You've been successfully logged in with Google.");
-            router.push("/(tabs)/home");
+            router.replace("/(tabs)/home");
           } catch (err) {
             console.error("Google code exchange failed:", err);
             Alert.alert("Login Failed", "Failed to login with Google (code exchange)");
@@ -94,7 +94,7 @@ export default function Login() {
               error: null,
               loading: false,
             });
-            router.push("/(tabs)/home");
+            router.replace("/(tabs)/home");
             // Optionally, navigate to home if not already there
           } else {
             // Invalid token, clear storage
@@ -120,7 +120,7 @@ export default function Login() {
       const success = await googleLogin(accessToken);
       
       if (success) {
-        router.push("/(tabs)/home");
+        router.replace("/(tabs)/home");
       } else {
         Alert.alert("Login Failed", error || "Failed to login with Google");
       }
@@ -142,7 +142,7 @@ export default function Login() {
       const success = await googleLogin(mockGoogleToken);
       
       if (success) {
-        router.push("/(tabs)/home");
+        router.replace("/(tabs)/home");
       } else {
         Alert.alert("Login Failed", error || "Failed to login with Google");
       }
@@ -177,7 +177,7 @@ export default function Login() {
         loading: false,
       });
   
-      router.push("/(tabs)/home");
+      router.replace("/(tabs)/home");
     } catch (err: any) {
       console.log("Mock login failed:", err.message);
       Alert.alert("Login Failed", err.message || "Mock login failed");
