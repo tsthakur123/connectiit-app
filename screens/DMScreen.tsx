@@ -50,6 +50,12 @@ const DMScreen = () => {
   const [chats, setChats] = useState<ChatItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [user, setUser] = useState<any>(null);
+  const firstName = user?.name?.split(" ")[0];
+  const displayName = firstName
+    ? firstName.length > 20
+      ? `${firstName.substring(0, 20)}...`
+      : firstName
+    : "User";
 
   useEffect(() => {
     const loadUser = async () => {
@@ -253,7 +259,7 @@ const DMScreen = () => {
     <View className="flex-1 bg-orange">
       {/* Header */}
       <Text className="p-2 pt-4 text-3xl font-bold text-black">
-        Hi, {user?.name || "User"}
+        Hi, {displayName || "User"}
       </Text>
 
       {/* Active Now */}
