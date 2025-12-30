@@ -1,316 +1,328 @@
 import { Topbar } from "@/components/Topbar";
-import axios from 'axios';
 import CommentsSheet from "@/components/Scrollable-Bottomsheet";
-import React, { useRef, useMemo, useCallback, useState, useEffect } from "react";
+import React, {
+  useRef,
+  useMemo,
+  useCallback,
+  useState,
+  useEffect,
+} from "react";
 import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
   FlatList,
-  Pressable,
   Image,
+  Pressable,
 } from "react-native";
 import BottomSheet from "@gorhom/bottom-sheet";
 import { router } from "expo-router";
 import { Heart, MessageCircle, Send } from "lucide-react-native";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { jwtDecode } from "jwt-decode";
-const getuserInfo = async () => {
-  try {
-    const token = await AsyncStorage.getItem("token");
-    if (!token) {
-      console.log("No token found");
-      return null};
+import { api } from "@/lib/api";
 
-    const userinfo: any = jwtDecode(token || "");
-    console.log("Decoded User Info:", userinfo);
-
-    return userinfo;
-  } catch (error) {
-    console.error("Error fetching user data:", error);
-    return null;
-  }
-};
-
-const CommentButton = ({
-  index,
-  onPress,
-}: {
-  index: number;
-  onPress: (index: number) => void;
-}) => {
-  return (
-    <Pressable
-      onPress={() => onPress(index)}
-      style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1 }]}
-    >
-      <Text style={{ color: "#FE744D", fontWeight: "bold" }}>Comment</Text>
-    </Pressable>
-  );
-};
-const handleLikePress = async (post_ID) => {
-  try {
-   const isLiked= await axios.post(
-      `http://localhost:3009/api/post/posts/${post_ID}/like?userId=${userInfo?.user_id}`
-    );
-    return isLiked.data;
-  } catch (error) {
-    console.error("Error liking post:", error);
-  }
-};
+import Animated, {
+  useSharedValue,
+  withTiming,
+  useAnimatedStyle,
+  Easing,
+  runOnJS,
+} from "react-native-reanimated";
+import { FeedSkeleton } from "@/components/FeedSkeleton";
 
 const FeedScreen = () => {
   const sheetRef = useRef<BottomSheet>(null);
-  const userInfoFN= async() => {
-  const res=await getuserInfo();
-  console.log("User Info in Feed Screen:", res);
-    userInfo=res;
-  }
   const snapPoints = useMemo(() => ["40%", "90%"], []);
-  const [userInfo, setUserInfo] = useState<any>(null);
-  const [postsData, setPostsData] = useState<any[]>([]);
-  const [activePostIndex, setActivePostIndex] = useState<number | null>(null);
-  const [activePostID, setActivePostID] = useState<string | null>(null);
-  const [likedPosts, setLikedPosts] = useState<{ [key: string]: boolean }>({});
+
+  const [initialLoading, setInitialLoading] = useState(true);
+
+  // ❤️ Reanimated values
+  const scale = useSharedValue(0);
+  const opacity = useSharedValue(0);
+  const [likeAnimatingPost, setLikeAnimatingPost] = useState<string | null>(
+    null
+  );
+  const lastTapRef = useRef<number | null>(null);
+  const DOUBLE_TAP_DELAY = 300; // ms
+
+  const [posts, setPosts] = useState<any[]>([]);
+  const [cursor, setCursor] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  const [activePostID, setActivePostID] = useState<string | undefined>();
   const [commentsData, setCommentsData] = useState<any[]>([]);
 
-  // Fetch user info
+  // ─────────────────────────────────────────────
+  // Fetch feed
+  // ─────────────────────────────────────────────
+  const fetchFeed = async () => {
+    if (loading) return;
+    setLoading(true);
+
+    try {
+      const res = await api.get("/feed", {
+        params: { limit: 5, cursor },
+      });
+
+      setPosts((prev) => [
+        ...prev,
+        ...res.data.data.map((p: any) => ({
+          ...p,
+          is_liked_by_user: p.is_liked_by_user ?? false,
+        })),
+      ]);
+
+      setCursor(res.data.next_cursor);
+    } catch (err) {
+      console.error("Feed fetch error:", err);
+    } finally {
+      setLoading(false);
+      setInitialLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchUser = async () => {
-      const res = await getuserInfo();
-      setUserInfo(res);
-      console.log("User Info in Feed Screen:", res);
-    };
-    fetchUser();
+    fetchFeed();
   }, []);
 
-  // Fetch posts
-  useEffect(() => {
-    const fetchPosts = async () => {
-      try {
-        const response = await axios.get("http://localhost:3009/api/post/");
-        setPostsData(response.data);
-      } catch (err) {
-        console.error("Error fetching posts:", err);
+  // ─────────────────────────────────────────────
+  // ❤️ Heart animation (Reanimated)
+  // ─────────────────────────────────────────────
+  const triggerLikeAnimation = (postID: string) => {
+    setLikeAnimatingPost(postID);
+
+    // Reset
+    scale.value = 0.5;
+    opacity.value = 1;
+
+    // Scale up
+    scale.value = withTiming(
+      1.6,
+      {
+        duration: 800,
+        easing: Easing.out(Easing.ease),
+      },
+      () => {
+        // Settle back to normal size
+        scale.value = withTiming(1, {
+          duration: 400,
+          easing: Easing.out(Easing.ease),
+        });
       }
-    };
-    fetchPosts();
-  }, []);
+    );
 
-  const posts = useMemo(() => postsData, [postsData]);
+    // Fade out slowly (2s total experience)
+    opacity.value = withTiming(
+      0,
+      {
+        duration: 2000,
+        easing: Easing.out(Easing.ease),
+      },
+      () => {
+        runOnJS(setLikeAnimatingPost)(null);
+      }
+    );
+  };
 
-  // Like function
+  const heartStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+    opacity: opacity.value,
+  }));
+
+  // ─────────────────────────────────────────────
+  // Like toggle
+  // ─────────────────────────────────────────────
   const handleLikePress = useCallback(
     async (postID: string) => {
-      if (!userInfo) {
-        console.warn("User info not loaded yet.");
-        return;
-      }
+      if (likeAnimatingPost === postID) return;
 
       try {
-        console.log("Calling like API for post:", postID, "user:", userInfo.user_id);
-        // Replace 192.168.x.x with your local machine IP if using Expo Go
-        const res = await axios.post(
-          `http://localhost:3009/api/post/posts/${postID}/like?userId=${userInfo.user_id}`
+        triggerLikeAnimation(postID);
+
+        const res = await api.post(`/feed/${postID}/like`);
+        const liked = res.data.liked;
+
+        setPosts((prev) =>
+          prev.map((p) =>
+            p.id === postID
+              ? {
+                  ...p,
+                  is_liked_by_user: liked,
+                  like_count: liked
+                    ? p.like_count + 1
+                    : Math.max(0, p.like_count - 1),
+                }
+              : p
+          )
         );
-
-        console.log("Like API response:", res.data);
-
-        if (!res.data.error) {
-          setLikedPosts((prev) => ({
-            ...prev,
-            [postID]: true,
-          }));
-        }
       } catch (err) {
-        console.error("Error liking post:", err);
+        console.error("Like error:", err);
       }
     },
-    [userInfo]
+    [likeAnimatingPost]
   );
 
-  // Comment function
-  const handleCommentPress = useCallback(
-    async (index: number) => {
-      if (!userInfo) return;
-      const postID = posts[index]?.id;
-      if (!postID) return;
-      setActivePostIndex(index);
+  const handleImageTap = (post: any) => {
+    const now = Date.now();
+
+    if (lastTapRef.current && now - lastTapRef.current < DOUBLE_TAP_DELAY) {
+      // 👆👆 DOUBLE TAP DETECTED
+      lastTapRef.current = null;
+
+      // Prevent spam / duplicate likes
+      if (post.is_liked_by_user) return;
+      if (likeAnimatingPost === post.id) return;
+
+      handleLikePress(post.id);
+    } else {
+      // First tap
+      lastTapRef.current = now;
+    }
+  };
+
+  // ─────────────────────────────────────────────
+  // Comments
+  // ─────────────────────────────────────────────
+  const handleCommentPress = useCallback(async (postID: string) => {
+    try {
       setActivePostID(postID);
-      try {
-        const response = await axios.get(
-          `http://localhost:3009/api/post/comments/${postID}`
-        );
-        const comments = response.data.message === "No comments found" ? [] : response.data;
-        setCommentsData(comments);
-        setTimeout(() => sheetRef.current?.snapToIndex(1), 50);
-      } catch (err) {
-        console.error("Error fetching comments:", err);
-        setCommentsData([]);
-      }
-    },
-    [posts, userInfo]
-  );
+      const res = await api.get(`/feed/${postID}/comments`, {
+        params: { limit: 10 },
+      });
+      setCommentsData(res.data.data);
+      sheetRef.current?.snapToIndex(1);
+    } catch (err) {
+      console.error("Fetch comments error:", err);
+    }
+  }, []);
 
-  const handleCommentAdded = useCallback(() => {
+  const handleCommentAdded = useCallback(async () => {
     if (!activePostID) return;
-    const fetchComments = async () => {
-      try {
-        const response = await axios.get(
-          `http://localhost:3009/api/post/comments/${activePostID}`
-        );
-        const comments = response.data.message === "No comments found" ? [] : response.data;
-        setCommentsData(comments);
-      } catch (err) {
-        console.error("Error refreshing comments:", err);
-      }
-    };
-    fetchComments();
+    const res = await api.get(`/feed/${activePostID}/comments`, {
+      params: { limit: 10 },
+    });
+    setCommentsData(res.data.data);
   }, [activePostID]);
 
-  const renderItem = ({ item, index }: { item: any; index: number }) => (
+  // ─────────────────────────────────────────────
+  // Render post
+  // ─────────────────────────────────────────────
+  const renderItem = ({ item }: { item: any }) => (
     <View style={styles.post}>
       <View style={styles.postHeader}>
         <View style={styles.avatar} />
-        <Text style={{ color: "#fafafa", fontWeight: "600" }}>
-          {item.user_id?.substring(0, 8) || `User ${index + 1}`}
-        </Text>
+        <Text style={styles.username}>{item.user_id.slice(0, 8)}</Text>
       </View>
-      <Text style={{ color: "#fafafa", fontSize: 16, marginVertical: 10 }}>
-        {item.text_content}
-      </Text>
-      {item.media_urls && (
-        <Image
-          source={{ uri: item.media_urls }}
-          style={styles.postImage}
-        />
+
+      <Text style={styles.caption}>{item.caption}</Text>
+
+      {item.cover_media_url && (
+        <View style={{ position: "relative" }}>
+          <Pressable
+            onPress={() => handleImageTap(item)}
+            style={{ position: "relative" }}
+          >
+            <Image
+              source={{ uri: item.cover_media_url }}
+              style={styles.postImage}
+            />
+
+            {likeAnimatingPost === item.id && (
+              <Animated.View style={[styles.heartOverlay, heartStyle]}>
+                <Heart size={90} color="#FE744D" fill="#FE744D" />
+              </Animated.View>
+            )}
+          </Pressable>
+
+          {likeAnimatingPost === item.id && (
+            <Animated.View style={[styles.heartOverlay, heartStyle]}>
+              <Heart size={90} color="#FE744D" fill="#FE744D" />
+            </Animated.View>
+          )}
+        </View>
       )}
-      <View style={{ flexDirection: "row", alignItems: "center", padding: 10 }}>
+
+      <View style={styles.actions}>
         <TouchableOpacity
           onPress={() => handleLikePress(item.id)}
-          disabled={!userInfo} // disable until userInfo loaded
-          style={{
-            flexDirection: "row",
-            justifyContent: "center",
-            alignItems: "center",
-            borderWidth: 1,
-            borderColor: "#FE744D",
-            borderRadius: 50,
-            width: 40,
-            height: 40,
-            marginRight: 5,
-            opacity: userInfo ? 1 : 0.5, // visually disabled
-          }}
+          style={styles.iconBtn}
         >
-          <Heart size={20} color={likedPosts[item.id] ? "green" : "#fafafa"} />
+          <Heart
+            size={20}
+            color={item.is_liked_by_user ? "#FE744D" : "#fafafa"}
+            fill={item.is_liked_by_user ? "#FE744D" : "none"}
+          />
+          <Text style={styles.count}>{item.like_count}</Text>
         </TouchableOpacity>
+
         <TouchableOpacity
-          onPress={() => handleCommentPress(index)}
-          style={{
-            flexDirection: "row",
-            justifyContent: "center",
-            alignItems: "center",
-            borderWidth: 1,
-            borderColor: "#FE744D",
-            borderRadius: 50,
-            width: 40,
-            height: 40,
-            marginRight: 5,
-          }}
+          onPress={() => handleCommentPress(item.id)}
+          style={styles.iconBtn}
         >
           <MessageCircle size={20} color="#fafafa" />
+          <Text style={styles.count}>{item.comment_count}</Text>
         </TouchableOpacity>
-        <TouchableOpacity
-          onPress={() => console.log("Share pressed")}
-          style={{
-            flexDirection: "row",
-            justifyContent: "center",
-            alignItems: "center",
-            borderWidth: 1,
-            borderColor: "#FE744D",
-            borderRadius: 50,
-            width: 40,
-            height: 40,
-          }}
-        >
+
+        <TouchableOpacity style={styles.iconBtn}>
           <Send size={20} color="#fafafa" />
         </TouchableOpacity>
       </View>
-      {item.interest_tags && item.interest_tags.length > 0 && (
-        <View style={{ flexDirection: "row", flexWrap: "wrap", padding: 10 }}>
-          {item.interest_tags.map((tag: string, tagIndex: number) => (
-            <Text
-              key={tagIndex}
-              style={{
-                fontSize: 12,
-                color: "#1B1730",
-                fontWeight: "600",
-                backgroundColor: "#FE744D",
-                paddingHorizontal: 10,
-                paddingVertical: 4,
-                borderRadius: 20,
-                marginRight: 5,
-                marginBottom: 5,
-              }}
-            >
-              #{tag}
-            </Text>
-          ))}
-        </View>
-      )}
     </View>
   );
 
   return (
-    <View style={{ flex: 1, backgroundColor: "#1B1730" }}>
+    <View style={styles.container}>
       <Topbar />
-      <FlatList
-        data={posts}
-        keyExtractor={(_, i) => `post-${i}`}
-        renderItem={renderItem}
-        contentContainerStyle={{ paddingBottom: 100 }}
-        showsVerticalScrollIndicator
-        nestedScrollEnabled
-      />
+
+      {initialLoading ? (
+        <FeedSkeleton />
+      ) : (
+        <FlatList
+          data={posts}
+          keyExtractor={(item) => item.id}
+          renderItem={renderItem}
+          onEndReached={fetchFeed}
+          onEndReachedThreshold={0.6}
+          contentContainerStyle={{ paddingBottom: 120 }}
+          ListFooterComponent={
+            loading ? (
+              <View style={{ paddingVertical: 20 }}>
+                <Text style={{ color: "#aaa", textAlign: "center" }}>
+                  Loading more...
+                </Text>
+              </View>
+            ) : null
+          }
+        />
+      )}
+
       <TouchableOpacity
-        style={{
-          position: "absolute",
-          right: 20,
-          bottom: "14%",
-          backgroundColor: "#FE744D",
-          width: 60,
-          height: 60,
-          borderRadius: 30,
-          justifyContent: "center",
-          alignItems: "center",
-          shadowColor: "#000",
-          shadowOffset: { width: 0, height: 2 },
-          shadowOpacity: 0.3,
-          shadowRadius: 3,
-          elevation: 5,
-        }}
+        style={styles.fab}
         onPress={() => router.push("/modal")}
       >
-        <Text style={{ color: "white", fontSize: 30, lineHeight: 34 }}>＋</Text>
+        <Text style={styles.fabText}>＋</Text>
       </TouchableOpacity>
+
       <CommentsSheet
         ref={sheetRef}
         snapPoints={snapPoints}
         data={commentsData}
         postID={activePostID}
-        userID={userInfo?.user_id}
         onCommentAdded={handleCommentAdded}
       />
     </View>
   );
 };
 
+export default FeedScreen;
+
 const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: "#1B1730" },
+
   post: {
     marginBottom: 15,
     borderBottomWidth: 1,
-    borderBottomColor: "#e0e0e0",
+    borderBottomColor: "#333",
     paddingBottom: 15,
   },
   postHeader: {
@@ -322,15 +334,56 @@ const styles = StyleSheet.create({
     width: 35,
     height: 35,
     borderRadius: 17.5,
-    backgroundColor: "#e0e0e0",
+    backgroundColor: "#444",
     marginRight: 10,
+  },
+  username: {
+    color: "#fafafa",
+    fontWeight: "600",
+  },
+  caption: {
+    color: "#fafafa",
+    fontSize: 16,
+    marginVertical: 10,
+    paddingHorizontal: 10,
   },
   postImage: {
     height: 300,
-    backgroundColor: "#f5f5f5",
     marginHorizontal: 8,
-    borderRadius: 40,
+    borderRadius: 20,
+  },
+  actions: {
+    flexDirection: "row",
+    padding: 10,
+  },
+  iconBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginRight: 15,
+  },
+  count: {
+    color: "#fafafa",
+    marginLeft: 6,
+  },
+  fab: {
+    position: "absolute",
+    right: 20,
+    bottom: "14%",
+    backgroundColor: "#FE744D",
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  fabText: {
+    color: "white",
+    fontSize: 30,
+  },
+  heartOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    justifyContent: "center",
+    alignItems: "center",
+    zIndex: 10,
   },
 });
-
-export default FeedScreen;

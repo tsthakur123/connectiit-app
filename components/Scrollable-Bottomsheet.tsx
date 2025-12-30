@@ -1,216 +1,288 @@
-import React, { useCallback, forwardRef, useState } from "react";
-import { StyleSheet, View, Text, TextInput, TouchableOpacity } from "react-native";
+import React, { forwardRef, useCallback, useState } from "react";
+import {
+  StyleSheet,
+  View,
+  Text,
+  TextInput,
+  Pressable,
+  Alert,
+} from "react-native";
 import BottomSheet, { BottomSheetFlatList } from "@gorhom/bottom-sheet";
-import axios from "axios";
+import { api } from "@/lib/api";
+import { Trash2 } from "lucide-react-native";
+
+interface Comment {
+  id: string;
+  user_id: string;
+  content: string;
+  created_at: string;
+  replies?: Comment[];
+}
 
 interface CommentsSheetProps {
   snapPoints: (string | number)[];
-  data: any[];
+  data: Comment[];
   postID?: string;
-  userID?: string;
   onCommentAdded?: () => void;
 }
 
-const CommentsSheet = forwardRef<any, CommentsSheetProps>(({ snapPoints, data, postID, userID, onCommentAdded }, ref) => {
-  const [commentText, setCommentText] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
+const CommentsSheet = forwardRef<any, CommentsSheetProps>(
+  ({ snapPoints, data, postID, onCommentAdded }, ref) => {
+    const [commentText, setCommentText] = useState("");
+    const [replyTo, setReplyTo] = useState<string | undefined>(undefined);
+    const [submitting, setSubmitting] = useState(false);
+    const [confirmDeleteID, setConfirmDeleteID] = useState<string | null>(null);
 
-  const handleSheetChange = useCallback((index: number) => {
-    // console.log("handleSheetChange", index);
-  }, []);
+    // ─────────────────────────────────────────────
+    // Add Comment / Reply
+    // ─────────────────────────────────────────────
+    const handlePostComment = async () => {
+      if (!commentText.trim() || !postID) return;
 
-  const handlePostComment = async () => {
-    if (!commentText.trim()) {
-      return;
-    }
+      setSubmitting(true);
+      try {
+        await api.post(`/feed/${postID}/comment`, {
+          content: commentText,
+          parent_id: replyTo,
+        });
 
-    if (!postID || !userID) {
-      console.error("Missing postID or userID");
-      return;
-    }
-
-    setIsSubmitting(true);
-    try {
-      const payload = {
-        post_id: postID,
-        user_id: userID,
-        content: commentText,
-      };
-
-      const response = await axios.post(
-        "http://localhost:3009/api/post/comments",
-        payload
-      );
-
-      console.log("Comment posted successfully:", response.data);
-      setCommentText("");
-      
-      // Callback to refresh comments
-      if (onCommentAdded) {
-        onCommentAdded();
+        setCommentText("");
+        setReplyTo(undefined);
+        onCommentAdded?.();
+      } catch (err) {
+        console.error("Add comment error:", err);
+      } finally {
+        setSubmitting(false);
       }
-    } catch (error) {
-      console.error("Error posting comment:", error);
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+    };
 
-  const renderItem = useCallback(
-    ({ item }: { item: any }) => {
-      // Handle both string and object formats
-      const commentContent = typeof item === 'string' ? item : item.content;
-      const userName = item.user_id ? item.user_id.substring(0, 8) : 'Anonymous';
-      
-      return (
-        <View style={styles.itemContainer}>
-          <Text style={styles.commentUserName}>{userName}</Text>
-          <Text style={styles.commentText}>{commentContent}</Text>
+    // ─────────────────────────────────────────────
+    // Delete Comment
+    // ─────────────────────────────────────────────
+    const handleDeleteComment = async (commentID: string) => {
+      try {
+        await api.delete(`/feed/comments/${commentID}`);
+        setConfirmDeleteID(null);
+        onCommentAdded?.();
+      } catch (err) {
+        console.error("Delete error:", err);
+      }
+    };
+
+    // ─────────────────────────────────────────────
+    // Render Comment (recursive, max depth = 2)
+    // ─────────────────────────────────────────────
+    const renderComment = useCallback(
+      (comment: Comment, isReply = false) => {
+        const isConfirming = confirmDeleteID === comment.id;
+
+        return (
+          <View
+            key={comment.id}
+            style={[styles.commentContainer, isReply && styles.replyContainer]}
+          >
+            {/* HEADER ROW */}
+            <View style={styles.commentHeader}>
+              <Text style={styles.commentUser}>
+                {comment.user_id.slice(0, 8)}
+              </Text>
+
+              {!isConfirming ? (
+                // 🗑️ DELETE ICON
+                <Pressable
+                  onPress={() => setConfirmDeleteID(comment.id)}
+                  style={styles.deleteIconBtn}
+                  hitSlop={10}
+                >
+                  <Trash2 size={16} color="#D80000" />
+                </Pressable>
+              ) : (
+                // ✅ CONFIRM / ❌ CANCEL
+                <View style={styles.confirmRow}>
+                  <Pressable
+                    onPress={() => handleDeleteComment(comment.id)}
+                    style={styles.confirmBtn}
+                  >
+                    <Text style={styles.confirmText}>Confirm</Text>
+                  </Pressable>
+
+                  <Pressable
+                    onPress={() => setConfirmDeleteID(null)}
+                    style={styles.cancelBtn}
+                  >
+                    <Text style={styles.cancelText}>Cancel</Text>
+                  </Pressable>
+                </View>
+              )}
+            </View>
+
+            {/* COMMENT TEXT */}
+            <Text style={styles.commentText}>{comment.content}</Text>
+
+            {/* REPLY ACTION */}
+            {!isReply && !isConfirming && (
+              <Pressable
+                onPress={() => setReplyTo(comment.id)}
+                style={styles.replyButton}
+              >
+                <Text style={styles.replyText}>Reply</Text>
+              </Pressable>
+            )}
+
+            {/* REPLIES */}
+            {comment.replies?.map((reply) => renderComment(reply, true))}
+          </View>
+        );
+      },
+      [confirmDeleteID]
+    );
+
+    return (
+      <BottomSheet
+        ref={ref}
+        index={-1}
+        snapPoints={snapPoints}
+        enablePanDownToClose
+        backgroundStyle={styles.sheetBackground}
+        handleIndicatorStyle={styles.handleIndicator}
+      >
+        {/* Header */}
+        <View style={styles.header}>
+          <Text style={styles.headerText}>Comments</Text>
         </View>
-      );
-    },
-    []
-  );
 
-  const renderEmptyComponent = useCallback(
-    () => (
-      <View style={styles.emptyContainer}>
-        <Text style={styles.emptyText}>Be the first to comment</Text>
-      </View>
-    ),
-    []
-  );
+        {/* Input */}
+        <View style={styles.inputRow}>
+          <TextInput
+            value={commentText}
+            onChangeText={setCommentText}
+            placeholder={replyTo ? "Replying to comment…" : "Add a comment…"}
+            placeholderTextColor="#999"
+            style={styles.input}
+            multiline
+          />
 
-  return (
-    <BottomSheet
-      ref={ref}
-      snapPoints={snapPoints}
-      index={-1}
-      enableDynamicSizing={false}
-      enablePanDownToClose
-      onChange={handleSheetChange}
-      backgroundStyle={styles.bottomSheet}
-      handleIndicatorStyle={styles.handleIndicator}
-    >
-      <View style={styles.headerContainer}>
-        <Text style={styles.headerText}>Comments</Text>
-      </View>
+          <Pressable
+            onPress={handlePostComment}
+            disabled={submitting || !commentText.trim() || !postID}
+            style={[
+              styles.postButton,
+              (submitting || !commentText.trim() || !postID) &&
+                styles.disabledButton,
+            ]}
+          >
+            <Text style={styles.postButtonText}>
+              {submitting ? "..." : "Post"}
+            </Text>
+          </Pressable>
+        </View>
 
-      <View style={styles.commentInputContainer}>
-        <TextInput
-          style={styles.commentInput}
-          placeholder="Add a comment..."
-          placeholderTextColor="#999"
-          value={commentText}
-          onChangeText={setCommentText}
-          multiline
-          maxLength={500}
+        {/* Comments */}
+        <BottomSheetFlatList
+          data={data}
+          keyExtractor={(item) => item.id}
+          renderItem={({ item }) => renderComment(item)}
+          contentContainerStyle={styles.listContent}
+          ListEmptyComponent={
+            <Text style={styles.emptyText}>Be the first to comment</Text>
+          }
         />
-        <TouchableOpacity 
-          style={[styles.submitButton, isSubmitting && styles.submitButtonDisabled]}
-          onPress={handlePostComment}
-          disabled={isSubmitting || !commentText.trim()}
-        >
-          <Text style={styles.submitButtonText}>
-            {isSubmitting ? "..." : "Post"}
-          </Text>
-        </TouchableOpacity>
-      </View>
+      </BottomSheet>
+    );
+  }
+);
 
-      <BottomSheetFlatList
-        data={data}
-        keyExtractor={(item, i) => item.ID || item.id || i.toString()}
-        renderItem={renderItem}
-        contentContainerStyle={styles.contentContainer}
-        ListEmptyComponent={renderEmptyComponent}
-      />
-    </BottomSheet>
-  );
-});
+export default CommentsSheet;
 
 const styles = StyleSheet.create({
-  bottomSheet: {
+  sheetBackground: {
     backgroundColor: "#1B1730",
-    borderRadius: 30,
+    borderRadius: 24,
   },
   handleIndicator: {
-    backgroundColor: "#F1f1f1",
+    backgroundColor: "#aaa",
   },
-  headerContainer: {
+  header: {
     alignItems: "center",
     paddingVertical: 10,
   },
   headerText: {
+    color: "#fafafa",
     fontSize: 18,
-    fontWeight: "bold",
-    color: "#fafafa",
+    fontWeight: "600",
   },
-  contentContainer: {
-    backgroundColor: "#1B1730",
-    paddingBottom: 20,
-  },
-  itemContainer: {
-    padding: 10,
-    marginVertical: 5,
-    marginHorizontal: 15,
-    backgroundColor: "#f1f1f1",
-    borderRadius: 6,
-  },
-  commentUserName: {
-    color: "#1B1730",
-    fontWeight: "bold",
-    fontSize: 12,
-    marginBottom: 4,
-  },
-  commentText: {
-    color: "#333",
-  },
-  emptyContainer: {
-    paddingVertical: 40,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  emptyText: {
-    color: "#fafafa",
-    fontSize: 16,
-    fontWeight: "500",
-  },
-  commentInputContainer: {
+  inputRow: {
     flexDirection: "row",
-    paddingHorizontal: 10,
-    paddingVertical: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: "#333",
-    alignItems: "flex-end",
     gap: 8,
+    padding: 10,
   },
-  commentInput: {
+  input: {
     flex: 1,
     backgroundColor: "#262438",
     color: "#fafafa",
     borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    maxHeight: 100,
-    fontSize: 14,
+    padding: 10,
     borderWidth: 1,
     borderColor: "#FE744D",
   },
-  submitButton: {
+  postButton: {
     backgroundColor: "#FE744D",
     paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 6,
     justifyContent: "center",
-    alignItems: "center",
+    borderRadius: 8,
   },
-  submitButtonDisabled: {
+  disabledButton: {
     opacity: 0.5,
   },
-  submitButtonText: {
+  postButtonText: {
     color: "#1B1730",
     fontWeight: "600",
-    fontSize: 14,
+  },
+  listContent: {
+    paddingBottom: 30,
+  },
+  commentContainer: {
+    backgroundColor: "#f1f1f1",
+    padding: 10,
+    borderRadius: 8,
+    marginHorizontal: 15,
+    marginVertical: 6,
+  },
+  replyContainer: {
+    marginLeft: 20,
+    backgroundColor: "#e6e6e6",
+  },
+  commentUser: {
+    fontWeight: "600",
+    fontSize: 12,
+    marginBottom: 2,
+  },
+  commentText: {
+    color: "#333",
+  },
+  replyButton: {
+    marginTop: 4,
+  },
+  replyText: {
+    fontSize: 12,
+    color: "#FE744D",
+  },
+  emptyText: {
+    color: "#fafafa",
+    textAlign: "center",
+    marginTop: 20,
+  },
+  commentHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+
+  deleteIconBtn: {
+    padding: 4,
+    borderRadius: 6,
+    backgroundColor: "#FFEAEA",
+    borderWidth: 1,
+    borderColor: "#FF6B6B",
   },
 });
-export default CommentsSheet;

@@ -19,8 +19,12 @@ const token = async () => {
   if (!token) return;
   return token;
 };
+import {SearchSkeleton} from "@/components/SearchSkeleton";
+
 
 const Search = () => {
+  const router = useRouter();
+
   const [userinfo, setUserinfo] = useState<any>(null);
 
   useEffect(() => {
@@ -33,28 +37,43 @@ const Search = () => {
   }, []);
 
   const [query, setQuery] = useState("");
-  const router = useRouter(); // ✅
   const [users, setUsers] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
 
-  const toggleFollow = async (userId: string, currentlyFriend: boolean) => {
+  // ───────────────────────────────
+  // Load user info from token
+  // ───────────────────────────────
+  useEffect(() => {
+    (async () => {
+      const token = await AsyncStorage.getItem("token");
+      if (!token) return;
+      const decoded: any = jwtDecode(token);
+      setUserinfo(decoded);
+    })();
+  }, []);
+
+  // ───────────────────────────────
+  // Follow / Unfollow
+  // ───────────────────────────────
+  const toggleFollow = async (userId: string, isFriend: boolean) => {
     try {
-      const action = currentlyFriend ? "unfollow" : "follow";
+      const token = await AsyncStorage.getItem("token");
+      if (!token || !userinfo) return;
 
       const payload = {
         followee_id: userId,
         follower_id: userinfo.user_id,
-        action: action,
+        action: isFriend ? "unfollow" : "follow",
       };
 
-      const res = await axios.post(
-        `http://localhost:3006/api/users/follow/user`,
+      await axios.post(
+        "http://localhost:3006/api/users/follow/user",
         payload,
         {
-          headers: {
-            Authorization: `Bearer ${await AsyncStorage.getItem("token")}`,
-          },
+          headers: { Authorization: `Bearer ${token}` },
         }
       );
+
 
       if (res.status === 200) {
         // Update UI immediately
@@ -65,17 +84,24 @@ const Search = () => {
         );
       }
     } catch (err) {
-      console.error("Follow/Unfollow error:", err);
+      console.error("Follow error:", err);
     }
   };
 
-  const loader = async (query: string) => {
-    if (!query || query.trim().length === 0) {
+  // ───────────────────────────────
+  // Search loader
+  // ───────────────────────────────
+  const loader = async (q: string) => {
+    if (!q || q.trim().length === 0) {
       setUsers([]);
+      setLoading(false);
       return;
     }
 
+    if (!userinfo) return;
+
     try {
+
       const tokenValue = await AsyncStorage.getItem("token");
       if (!tokenValue) return;
       const payload = {
@@ -95,20 +121,25 @@ const Search = () => {
     } catch (err) {
       console.error("Search error:", err);
       setUsers([]);
+    } finally {
+      setLoading(false);
     }
   };
 
+  // ───────────────────────────────
+  // Debounce search
+  // ───────────────────────────────
   useEffect(() => {
     const delay = setTimeout(() => {
       loader(query);
-    }, 400); // debounce
+    }, 400);
 
     return () => clearTimeout(delay);
   }, [query]);
 
   return (
     <SafeAreaView className="flex-1 bg-primary px-4">
-      {/* Search Bar */}
+      {/* Search bar */}
       <View className="py-2">
         <TextInput
           value={query}
@@ -119,6 +150,10 @@ const Search = () => {
         />
       </View>
 
+         {/* Results / Shimmer */}
+      {loading ? (
+        <SearchSkeleton />
+      ) : (
       {/* User Cards */}
       <FlatList
         data={users}
@@ -142,19 +177,24 @@ const Search = () => {
               <Text className="text-white font-semibold">{item.username}</Text>
               <Text className="text-gray-400 text-sm">{item.name}</Text>
             </View>
-            <TouchableOpacity
-              onPress={() => toggleFollow(item.user_id, item.isFriend)}
-              className={`px-4 py-1.5 rounded-xl ${
-                item.isFriend ? "bg-gray-600" : "bg-orange"
-              }`}
-            >
-              <Text className="text-white font-semibold">
-                {item.isFriend ? "Unfollow" : "Follow"}
-              </Text>
+
+
+              <TouchableOpacity
+                onPress={() =>
+                  toggleFollow(item.user_id, item.isFriend)
+                }
+                className={`px-4 py-1.5 rounded-xl ${
+                  item.isFriend ? "bg-gray-600" : "bg-orange"
+                }`}
+              >
+                <Text className="text-white font-semibold">
+                  {item.isFriend ? "Unfollow" : "Follow"}
+                </Text>
+              </TouchableOpacity>
             </TouchableOpacity>
-          </TouchableOpacity>
-        )}
-      />
+          )}
+        />
+      )}
     </SafeAreaView>
   );
 };

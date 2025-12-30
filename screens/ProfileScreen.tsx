@@ -44,6 +44,7 @@ interface User {
   friends: any[] | null; // Consider defining a Friend type if structure is known
 }
 
+
 interface Post {
   id: string;
   media_urls?: string[];
