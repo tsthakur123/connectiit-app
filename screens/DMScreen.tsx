@@ -258,7 +258,7 @@ const DMScreen = () => {
 
       {/* Active Now */}
       <Text className="px-4 text-xl font-bold text-black mt-20">
-        active now
+        Active now
       </Text>
 
       <OnlineUsers
