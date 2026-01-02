@@ -104,7 +104,14 @@ const Search = () => {
         />
       </View>
 
+<<<<<<< Updated upstream
       {/* User Cards */}
+=======
+         {/* Results / Shimmer */}
+      {loading ? (
+        <SearchSkeleton />
+      ) : (
+>>>>>>> Stashed changes
       <FlatList
         data={users}
         keyExtractor={(item) => item.user_id}

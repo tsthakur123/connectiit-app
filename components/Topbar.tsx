@@ -4,6 +4,7 @@ import { Link, router } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { jwtDecode } from "jwt-decode";
 import { useEffect, useState } from "react";
+import NotificationsButton from './NotificationsButton';
 const getuserInfo = async () => {
   try {
     const token = await AsyncStorage.getItem("token");
@@ -38,6 +39,7 @@ export const Topbar = () => {
 
       {/* Right - Icons */}
       <View className="flex-row space-x-4">
+        <NotificationsButton />
         <TouchableOpacity onPress={() => router.push("/profile")}>
           <Image
             source={{ uri: user?.image  }}

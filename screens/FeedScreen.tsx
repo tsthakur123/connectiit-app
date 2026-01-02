@@ -1,5 +1,11 @@
 import { Topbar } from "@/components/Topbar";
+<<<<<<< Updated upstream
 import axios from 'axios';
+=======
+import OnlineUsers from '@/components/OnlineUsers';
+import { PresenceService } from '@/services/presence.service';
+import { useAuthStore } from '@/store/authStore';
+>>>>>>> Stashed changes
 import CommentsSheet from "@/components/Scrollable-Bottomsheet";
 import React, { useRef, useMemo, useCallback, useState, useEffect } from "react";
 import {
@@ -59,6 +65,8 @@ const FeedScreen = () => {
   const [activePostID, setActivePostID] = useState<string | null>(null);
   const [likedPosts, setLikedPosts] = useState<{ [key: string]: boolean }>({});
   const [commentsData, setCommentsData] = useState<any[]>([]);
+  const { user, token } = useAuthStore();
+  const [onlineUsersList, setOnlineUsersList] = useState<any[]>([]);
 
   // Fetch user info
   useEffect(() => {
@@ -70,6 +78,7 @@ const FeedScreen = () => {
     fetchUser();
   }, []);
 
+<<<<<<< Updated upstream
   // Fetch posts
   useEffect(() => {
     const fetchPosts = async () => {
@@ -78,6 +87,68 @@ const FeedScreen = () => {
         setPostsData(response.data);
       } catch (err) {
         console.error("Error fetching posts:", err);
+=======
+  // Presence: initial fetch and realtime subscribe
+  useEffect(() => {
+    let mounted = true;
+    let unsub: any = null;
+
+    (async () => {
+      try {
+        const res = await PresenceService.fetchList(100);
+        if (mounted && res.success) {
+          setOnlineUsersList(res.data.map((u: any) => ({ id: u.userId, name: u.userId })));
+        }
+        // connect socket for realtime updates
+        unsub = PresenceService.connect(token, (evt: any) => {
+          if (!evt || !evt.userId) return;
+          setOnlineUsersList((prev) => {
+            if (evt.type === 'online') {
+              if (prev.find((p) => p.id === evt.userId)) return prev;
+              return [{ id: evt.userId, name: evt.userId }, ...prev];
+            }
+            if (evt.type === 'offline') {
+              return prev.filter((p) => p.id !== evt.userId);
+            }
+            return prev;
+          });
+        });
+      } catch (err) {
+        console.warn('presence init error', err);
+      }
+    })();
+
+    return () => {
+      mounted = false;
+      try { PresenceService.disconnect(); } catch (e) {}
+      if (unsub) unsub();
+    };
+  }, [token]);
+
+  // ─────────────────────────────────────────────
+  // ❤️ Heart animation (Reanimated)
+  // ─────────────────────────────────────────────
+  const triggerLikeAnimation = (postID: string) => {
+    setLikeAnimatingPost(postID);
+
+    // Reset
+    scale.value = 0.5;
+    opacity.value = 1;
+
+    // Scale up
+    scale.value = withTiming(
+      1.6,
+      {
+        duration: 800,
+        easing: Easing.out(Easing.ease),
+      },
+      () => {
+        // Settle back to normal size
+        scale.value = withTiming(1, {
+          duration: 400,
+          easing: Easing.out(Easing.ease),
+        });
+>>>>>>> Stashed changes
       }
     };
     fetchPosts();
@@ -250,6 +321,7 @@ const FeedScreen = () => {
   return (
     <View style={{ flex: 1, backgroundColor: "#1B1730" }}>
       <Topbar />
+<<<<<<< Updated upstream
       <FlatList
         data={posts}
         keyExtractor={(_, i) => `post-${i}`}
@@ -258,6 +330,33 @@ const FeedScreen = () => {
         showsVerticalScrollIndicator
         nestedScrollEnabled
       />
+=======
+      <OnlineUsers users={onlineUsersList} fetchUsers={async (cursor, limit=30) => ({ users: onlineUsersList, nextCursor: null })} />
+
+
+      {initialLoading ? (
+        <FeedSkeleton />
+      ) : (
+        <FlatList
+          data={posts}
+          keyExtractor={(item) => item.id}
+          renderItem={renderItem}
+          onEndReached={fetchFeed}
+          onEndReachedThreshold={0.6}
+          contentContainerStyle={{ paddingBottom: 120 }}
+          ListFooterComponent={
+            loading ? (
+              <View style={{ paddingVertical: 20 }}>
+                <Text style={{ color: "#aaa", textAlign: "center" }}>
+                  Loading more...
+                </Text>
+              </View>
+            ) : null
+          }
+        />
+      )}
+
+>>>>>>> Stashed changes
       <TouchableOpacity
         style={{
           position: "absolute",

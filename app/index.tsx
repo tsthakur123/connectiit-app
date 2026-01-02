@@ -56,7 +56,17 @@ export default function Login() {
             await AsyncStorage.setItem('token', token);
             await AsyncStorage.setItem('user', JSON.stringify(user));
             Alert.alert("Login Success", "You've been successfully logged in with Google.");
+<<<<<<< Updated upstream
             router.push("/(tabs)/home");
+=======
+            // If user has completed onboarding (username present) go to home, else onboarding
+            const currentUser = useAuthStore.getState().user;
+            if (currentUser?.username) {
+              router.replace("/(tabs)/home");
+            } else {
+              router.replace('/onboarding');
+            }
+>>>>>>> Stashed changes
           } catch (err) {
             console.error("Google code exchange failed:", err);
             Alert.alert("Login Failed", "Failed to login with Google (code exchange)");
@@ -94,7 +104,16 @@ export default function Login() {
               error: null,
               loading: false,
             });
+<<<<<<< Updated upstream
             router.push("/(tabs)/home");
+=======
+            const currentUser = useAuthStore.getState().user;
+            if (currentUser?.username) {
+              router.replace("/(tabs)/home");
+            } else {
+              router.replace('/onboarding');
+            }
+>>>>>>> Stashed changes
             // Optionally, navigate to home if not already there
           } else {
             // Invalid token, clear storage
@@ -120,7 +139,16 @@ export default function Login() {
       const success = await googleLogin(accessToken);
       
       if (success) {
+<<<<<<< Updated upstream
         router.push("/(tabs)/home");
+=======
+        const currentUser = useAuthStore.getState().user;
+        if (currentUser?.username) {
+          router.replace("/(tabs)/home");
+        } else {
+          router.replace('/onboarding');
+        }
+>>>>>>> Stashed changes
       } else {
         Alert.alert("Login Failed", error || "Failed to login with Google");
       }
@@ -142,7 +170,16 @@ export default function Login() {
       const success = await googleLogin(mockGoogleToken);
       
       if (success) {
+<<<<<<< Updated upstream
         router.push("/(tabs)/home");
+=======
+        const currentUser = useAuthStore.getState().user;
+        if (currentUser?.username) {
+          router.replace("/(tabs)/home");
+        } else {
+          router.replace('/onboarding');
+        }
+>>>>>>> Stashed changes
       } else {
         Alert.alert("Login Failed", error || "Failed to login with Google");
       }
@@ -177,7 +214,16 @@ export default function Login() {
         loading: false,
       });
   
+<<<<<<< Updated upstream
       router.push("/(tabs)/home");
+=======
+      const currentUser = useAuthStore.getState().user;
+      if (currentUser?.username) {
+        router.replace("/(tabs)/home");
+      } else {
+        router.replace('/onboarding');
+      }
+>>>>>>> Stashed changes
     } catch (err: any) {
       console.log("Mock login failed:", err.message);
       Alert.alert("Login Failed", err.message || "Mock login failed");
