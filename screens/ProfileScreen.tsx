@@ -114,17 +114,10 @@ export const ProfileScreen = () => {
       <View className="mt-6 mx-auto bg-white2 w-[90%] h-16 rounded-full flex-row items-center justify-around shadow-md">
         <View className="items-center">
           <Text className="text-secondary font-bold">Followers</Text>
-<<<<<<< HEAD
           <Text className="text-xl font-bold text-primary">
             {user?.followers_count ?? 0}
           </Text>
         </View>
-=======
-          <Text className="text-xl font-bold text-primary">{user?.followers_count || 0}</Text>
-        </View>
-       
-
->>>>>>> 5fc5d96 (Recovery)
 
         <View className="items-center">
           <Text className="text-secondary font-bold">Following</Text>
@@ -133,13 +126,7 @@ export const ProfileScreen = () => {
           </Text>
         </View>
       </View>
-<<<<<<< HEAD
       <View className="mt-4 px-4">
-=======
-
-      {/* Expandable Section */}
-      {/* <View className="mt-4 px-4">
->>>>>>> 5fc5d96 (Recovery)
         <ExpandableSection interests={user?.interests || []} />
       </View> */}
 
